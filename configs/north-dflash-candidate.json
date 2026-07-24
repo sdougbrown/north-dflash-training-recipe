@@ -17,11 +17,14 @@
     "requires_exact_expert_only_autogptq": true,
     "tokenizer_path": "/home/douglasbrown/Models/North-Mini-Code-1.0-int4-autoround-gptq-g32/tokenizer_config.json"
   },
-  "derived_draft_candidate": {
+  "draft_candidate_selection": "none; both candidates require review and North-specific gates",
+  "draft_common": {
     "block_size_candidate": 16,
     "head_dim": 128,
     "hidden_act": "silu",
     "hidden_size": 2048,
+    "intermediate_size": 6144,
+    "intermediate_size_source": "published dense Qwen3 DFlash geometry: 3 * hidden_size",
     "mask_token_audit": {
       "added_token_id": 1,
       "id": 1,
@@ -37,25 +40,11 @@
     "max_position_embeddings": 500000,
     "north_hidden_state_indexing_status": "unverified; Cohere2Moe runtime/extractor evidence required",
     "num_attention_heads": 32,
-    "num_hidden_layers_candidate": 5,
     "num_key_value_heads": 4,
-    "reference_hidden_state_indices_candidate": [
-      2,
-      13,
-      25,
-      36,
-      47
-    ],
     "rms_norm_eps": 1e-06,
     "shared_embedding_and_lm_head": "paper-aligned candidate; exact weight handoff unresolved",
+    "target_expert_intermediate_size": 768,
     "target_layer_id_convention": "zero_based_transformer_block_index",
-    "target_layer_ids_candidate": [
-      1,
-      12,
-      24,
-      35,
-      46
-    ],
     "vocab_size": 262144
   },
   "observed_tokenizer": {
@@ -65,7 +54,93 @@
     "tokenizer_class": "TokenizersBackend",
     "tokenizer_json_path": "/home/douglasbrown/Models/North-Mini-Code-1.0-int4-autoround-gptq-g32/tokenizer.json"
   },
-  "status": "CPU layout tested; tensor/FlexAttention integration missing; not trainable",
+  "reviewed_draft_candidates": [
+    {
+      "attention_layout": {
+        "full_attention_layers": 8,
+        "sliding_attention_layers": 0
+      },
+      "draft_layers": 8,
+      "estimated_bf16_weight_bytes": 947990528,
+      "estimated_dense_dflash_weights": {
+        "attention_per_layer": 18874368,
+        "feature_projection": 20971520,
+        "mlp_per_layer": 37748736,
+        "norm_weights": 38912,
+        "total": 473995264
+      },
+      "estimated_kv_bytes_per_token_bf16_or_fp16": 16384,
+      "estimated_target_feature_bytes_per_clean_token_bf16": 20480,
+      "name": "acceptance_first_qwen3_coder_shaped",
+      "reference_hidden_state_indices_candidate": [
+        2,
+        13,
+        25,
+        36,
+        47
+      ],
+      "target_feature_count": 5,
+      "target_layer_id_status": "reference spread is representable for this target depth",
+      "target_layer_ids_candidate": [
+        1,
+        12,
+        24,
+        35,
+        46
+      ]
+    },
+    {
+      "attention_layout": {
+        "eager_status": "blocked: local DFlash eager attention does not apply sliding_window",
+        "full_attention_layers": 1,
+        "layer_order_source": "z-lab/Qwen3.6-35B-A3B-DFlash config.json",
+        "layer_types": [
+          "sliding_attention",
+          "sliding_attention",
+          "sliding_attention",
+          "sliding_attention",
+          "sliding_attention",
+          "full_attention"
+        ],
+        "sliding_attention_layers": 5
+      },
+      "draft_layers": 6,
+      "estimated_bf16_weight_bytes": 746646528,
+      "estimated_dense_dflash_weights": {
+        "attention_per_layer": 18874368,
+        "feature_projection": 33554432,
+        "mlp_per_layer": 37748736,
+        "norm_weights": 30208,
+        "total": 373323264
+      },
+      "estimated_kv_bytes_per_token_bf16_or_fp16": 12288,
+      "estimated_target_feature_bytes_per_clean_token_bf16": 32768,
+      "name": "long_context_memory_qwen36_shaped",
+      "reference_hidden_state_indices_candidate": [
+        2,
+        8,
+        15,
+        21,
+        28,
+        34,
+        41,
+        47
+      ],
+      "target_feature_count": 8,
+      "target_layer_id_status": "reference spread is representable for this target depth",
+      "target_layer_ids_candidate": [
+        1,
+        7,
+        14,
+        20,
+        27,
+        33,
+        40,
+        46
+      ]
+    }
+  ],
+  "status": "CPU layout, optional training-step, and reference eager-DFlash adapter tested; North integration missing; not trainable",
   "teacher_feature_manifest": {
     "checkpoint_identity_status": "not_verified",
     "extraction_status": "not_implemented",
@@ -100,7 +175,9 @@
     "Confirm Cohere2Moe output_hidden_states numbering before applying the reference layer_id + 1 convention.",
     "Verify every checkpoint shard before extraction; this manifest fingerprints config.json only and cannot prove teacher-weight identity.",
     "Implement exact AutoGPTQ expert-only teacher hidden-state extraction without dequantizing or changing deployment weights.",
-    "Decide dense draft MLP versus any MoE-derived initializer; a five-layer dense draft is only a paper-shaped candidate.",
-    "Define vLLM Cohere2Moe auxiliary-state plumbing and verify it against the running deployment integration."
+    "Decide dense draft MLP versus any MoE-derived initializer; neither reviewed dense draft candidate is a decision.",
+    "Define vLLM Cohere2Moe auxiliary-state plumbing and verify it against the running deployment integration.",
+    "Choose between the reviewed 8-full/5-feature and 6-layer (5-SWA + 1-full)/8-feature candidates only after acceptance and long-context memory measurements.",
+    "Do not instantiate the long-context candidate with eager attention: the local reference forwards sliding_window to eager_attention_forward, which does not enforce it."
   ]
 }

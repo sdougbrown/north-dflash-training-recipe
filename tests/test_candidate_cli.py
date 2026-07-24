@@ -24,6 +24,7 @@ class CandidateAndCliTests(unittest.TestCase):
                 "model_type": "cohere2_moe",
                 "num_hidden_layers": 9,
                 "hidden_size": 16,
+                "intermediate_size": 12,
                 "head_dim": 4,
                 "num_attention_heads": 4,
                 "num_key_value_heads": 2,
@@ -44,9 +45,20 @@ class CandidateAndCliTests(unittest.TestCase):
             (root / "tokenizer_config.json").write_text(json.dumps({"tokenizer_class": "TokenizersBackend"}))
             candidate = derive_north_candidate(root / "config.json", root / "tokenizer_config.json")
         self.assertTrue(candidate["deployment_target"]["requires_exact_expert_only_autogptq"])
-        self.assertIsNone(candidate["derived_draft_candidate"]["mask_token_id"])
-        self.assertEqual(candidate["derived_draft_candidate"]["rms_norm_eps"], 1e-6)
-        self.assertEqual(candidate["derived_draft_candidate"]["reference_hidden_state_indices_candidate"], [2, 3, 5, 6, 7])
+        self.assertIsNone(candidate["draft_common"]["mask_token_id"])
+        self.assertEqual(candidate["draft_common"]["rms_norm_eps"], 1e-6)
+        self.assertEqual(candidate["draft_common"]["intermediate_size"], 48)
+        self.assertEqual(candidate["draft_common"]["target_expert_intermediate_size"], 12)
+        self.assertEqual(candidate["draft_candidate_selection"], "none; both candidates require review and North-specific gates")
+        self.assertEqual(
+            candidate["reviewed_draft_candidates"][0]["reference_hidden_state_indices_candidate"], [2, 3, 5, 6, 7]
+        )
+        self.assertEqual(candidate["reviewed_draft_candidates"][0]["draft_layers"], 8)
+        self.assertEqual(
+            candidate["reviewed_draft_candidates"][0]["estimated_dense_dflash_weights"]["mlp_per_layer"],
+            3 * 16 * 48,
+        )
+        self.assertEqual(candidate["reviewed_draft_candidates"][1]["target_feature_count"], 8)
         self.assertIn("AutoGPTQ", candidate["unresolved_choices"][2])
 
     def test_cli_dry_run_is_cpu_only(self):

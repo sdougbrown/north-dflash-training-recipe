@@ -85,6 +85,87 @@ def audit_mask_token(
     }
 
 
+def _estimate_dflash_parameters(
+    *,
+    hidden_size: int,
+    intermediate_size: int,
+    num_attention_heads: int,
+    num_key_value_heads: int,
+    head_dim: int,
+    draft_layers: int,
+    target_features: int,
+) -> dict[str, int]:
+    """Count local ``DFlashDraftModel`` dense trainable weights (no biases)."""
+    attention_per_layer = (
+        hidden_size * num_attention_heads * head_dim
+        + 2 * hidden_size * num_key_value_heads * head_dim
+        + num_attention_heads * head_dim * hidden_size
+    )
+    mlp_per_layer = 3 * hidden_size * intermediate_size
+    # Each local DFlash layer has input/post RMSNorms at H and Q/K RMSNorms
+    # at head_dim; the model additionally has hidden/final RMSNorms at H.
+    norms = draft_layers * (2 * hidden_size + 2 * head_dim) + 2 * hidden_size
+    feature_projection = target_features * hidden_size * hidden_size
+    return {
+        "attention_per_layer": attention_per_layer,
+        "mlp_per_layer": mlp_per_layer,
+        "feature_projection": feature_projection,
+        "norm_weights": norms,
+        "total": draft_layers * (attention_per_layer + mlp_per_layer) + feature_projection + norms,
+    }
+
+
+def _reviewed_draft_candidate(
+    *,
+    name: str,
+    draft_layers: int,
+    target_features: int,
+    attention_layout: dict[str, Any],
+    target_layers: int,
+    hidden_size: int,
+    intermediate_size: int,
+    num_attention_heads: int,
+    num_key_value_heads: int,
+    head_dim: int,
+) -> dict[str, Any]:
+    """Make an explicit, non-selected DFlash geometry candidate."""
+    estimates = _estimate_dflash_parameters(
+        hidden_size=hidden_size,
+        intermediate_size=intermediate_size,
+        num_attention_heads=num_attention_heads,
+        num_key_value_heads=num_key_value_heads,
+        head_dim=head_dim,
+        draft_layers=draft_layers,
+        target_features=target_features,
+    )
+    # K and V only; assumes BF16/FP16 cache values and one query token retained.
+    kv_bytes_per_token = draft_layers * 2 * num_key_value_heads * head_dim * 2
+    try:
+        layer_ids = build_target_layer_ids(target_layers, target_features)
+        layer_id_status = "reference spread is representable for this target depth"
+    except ValueError:
+        # Keep config-only inspection usable for tiny fixture targets while
+        # making an infeasible published geometry explicit rather than
+        # silently reducing its target-feature count.
+        layer_ids = None
+        layer_id_status = "unavailable: target is too shallow for this target-feature count"
+    return {
+        "name": name,
+        "draft_layers": draft_layers,
+        "target_feature_count": target_features,
+        "target_layer_ids_candidate": layer_ids,
+        "target_layer_id_status": layer_id_status,
+        "reference_hidden_state_indices_candidate": (
+            [layer_id + 1 for layer_id in layer_ids] if layer_ids is not None else None
+        ),
+        "attention_layout": attention_layout,
+        "estimated_dense_dflash_weights": estimates,
+        "estimated_bf16_weight_bytes": estimates["total"] * 2,
+        "estimated_kv_bytes_per_token_bf16_or_fp16": kv_bytes_per_token,
+        "estimated_target_feature_bytes_per_clean_token_bf16": target_features * hidden_size * 2,
+    }
+
+
 def derive_north_candidate(
     target_config_path: str | Path = DEFAULT_TARGET_CONFIG,
     tokenizer_config_path: str | Path = DEFAULT_TOKENIZER_CONFIG,
@@ -103,19 +184,69 @@ def derive_north_candidate(
     mask_audit = audit_mask_token(tokenizer_json, expected_vocab_size=vocab_size)
     target_layer_ids = build_target_layer_ids(layers, draft_layers)
     teacher_manifest = teacher_feature_manifest_from_config(target_path, target_layer_ids)
+    hidden_size = int(target["hidden_size"])
+    target_expert_intermediate_size = int(target["intermediate_size"])
+    # Published Qwen3-Coder and Qwen3.6 DFlash drafts with H=2048 use a
+    # dense SwiGLU width of 6144. North's 768 is a per-expert target width and
+    # must not be reused as the dense draft MLP width.
+    draft_intermediate_size = 3 * hidden_size
+    num_attention_heads = int(target["num_attention_heads"])
+    num_key_value_heads = int(target["num_key_value_heads"])
+    head_dim = int(target["head_dim"])
+    reviewed_draft_candidates = [
+        _reviewed_draft_candidate(
+            name="acceptance_first_qwen3_coder_shaped",
+            draft_layers=8,
+            target_features=5,
+            attention_layout={"full_attention_layers": 8, "sliding_attention_layers": 0},
+            target_layers=layers,
+            hidden_size=hidden_size,
+            intermediate_size=draft_intermediate_size,
+            num_attention_heads=num_attention_heads,
+            num_key_value_heads=num_key_value_heads,
+            head_dim=head_dim,
+        ),
+        _reviewed_draft_candidate(
+            name="long_context_memory_qwen36_shaped",
+            draft_layers=6,
+            target_features=8,
+            attention_layout={
+                "full_attention_layers": 1,
+                "sliding_attention_layers": 5,
+                "layer_types": [
+                    "sliding_attention",
+                    "sliding_attention",
+                    "sliding_attention",
+                    "sliding_attention",
+                    "sliding_attention",
+                    "full_attention",
+                ],
+                "layer_order_source": "z-lab/Qwen3.6-35B-A3B-DFlash config.json",
+                "eager_status": "blocked: local DFlash eager attention does not apply sliding_window",
+            },
+            target_layers=layers,
+            hidden_size=hidden_size,
+            intermediate_size=draft_intermediate_size,
+            num_attention_heads=num_attention_heads,
+            num_key_value_heads=num_key_value_heads,
+            head_dim=head_dim,
+        ),
+    ]
 
     unresolved = [
         "Confirm Cohere2Moe output_hidden_states numbering before applying the reference layer_id + 1 convention.",
         "Verify every checkpoint shard before extraction; this manifest fingerprints config.json only and cannot prove teacher-weight identity.",
         "Implement exact AutoGPTQ expert-only teacher hidden-state extraction without dequantizing or changing deployment weights.",
-        "Decide dense draft MLP versus any MoE-derived initializer; a five-layer dense draft is only a paper-shaped candidate.",
+        "Decide dense draft MLP versus any MoE-derived initializer; neither reviewed dense draft candidate is a decision.",
         "Define vLLM Cohere2Moe auxiliary-state plumbing and verify it against the running deployment integration.",
+        "Choose between the reviewed 8-full/5-feature and 6-layer (5-SWA + 1-full)/8-feature candidates only after acceptance and long-context memory measurements.",
+        "Do not instantiate the long-context candidate with eager attention: the local reference forwards sliding_window to eager_attention_forward, which does not enforce it.",
     ]
     if not mask_audit["valid"]:
         unresolved.append("Resolve the invalid <MASK_TOKEN> tokenizer audit before training.")
 
     return {
-        "status": "CPU layout and bounded optional training-step contract tested; target/FlexAttention integration missing; not trainable",
+        "status": "CPU layout, optional training-step, and reference eager-DFlash adapter tested; North integration missing; not trainable",
         "deployment_target": {
             "model_path": str(target_path),
             "tokenizer_path": str(tokenizer_path),
@@ -134,18 +265,18 @@ def derive_north_candidate(
                 "num_experts_per_tok": target.get("num_experts_per_tok"),
             },
         },
-        "derived_draft_candidate": {
-            "hidden_size": target.get("hidden_size"),
-            "head_dim": target.get("head_dim"),
-            "num_attention_heads": target.get("num_attention_heads"),
-            "num_key_value_heads": target.get("num_key_value_heads"),
+        "draft_common": {
+            "hidden_size": hidden_size,
+            "intermediate_size": draft_intermediate_size,
+            "target_expert_intermediate_size": target_expert_intermediate_size,
+            "intermediate_size_source": "published dense Qwen3 DFlash geometry: 3 * hidden_size",
+            "head_dim": head_dim,
+            "num_attention_heads": num_attention_heads,
+            "num_key_value_heads": num_key_value_heads,
             "hidden_act": target.get("hidden_act"),
             "rms_norm_eps": target.get("rms_norm_eps", target.get("layer_norm_eps")),
-            "num_hidden_layers_candidate": draft_layers,
             "block_size_candidate": 16,
-            "target_layer_ids_candidate": target_layer_ids,
             "target_layer_id_convention": "zero_based_transformer_block_index",
-            "reference_hidden_state_indices_candidate": [layer_id + 1 for layer_id in target_layer_ids],
             "north_hidden_state_indexing_status": "unverified; Cohere2Moe runtime/extractor evidence required",
             "vocab_size": vocab_size,
             "max_position_embeddings": target.get("max_position_embeddings"),
@@ -153,6 +284,8 @@ def derive_north_candidate(
             "mask_token_id": mask_audit["id"],
             "mask_token_audit": mask_audit,
         },
+        "reviewed_draft_candidates": reviewed_draft_candidates,
+        "draft_candidate_selection": "none; both candidates require review and North-specific gates",
         "teacher_feature_manifest": teacher_manifest.to_dict(),
         "unresolved_choices": unresolved,
         "observed_tokenizer": {

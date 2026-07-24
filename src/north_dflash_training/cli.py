@@ -60,7 +60,7 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, object]:
         args.tokenizer_config,
         getattr(args, "tokenizer_json", None),
     )
-    audited_mask_token_id = candidate["derived_draft_candidate"]["mask_token_id"]
+    audited_mask_token_id = candidate["draft_common"]["mask_token_id"]
     if audited_mask_token_id is None:
         raise ValueError("tokenizer.json does not provide a valid audited <MASK_TOKEN> ID")
     if args.mask_token_id is not None and args.mask_token_id != audited_mask_token_id:
