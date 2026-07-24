@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Config-fingerprinted, checkpoint-unverified North AutoGPTQ teacher feature manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "teacher_config_path",
+    "teacher_config_sha256",
+    "target_num_hidden_layers",
+    "selected_layer_ids",
+    "selected_layer_id_convention",
+    "quantization_identity",
+    "checkpoint_identity_status",
+    "feature_kind",
+    "extraction_status"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "teacher_config_path": { "type": "string" },
+    "teacher_config_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "target_num_hidden_layers": { "type": "integer", "minimum": 1 },
+    "selected_layer_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "selected_layer_id_convention": { "const": "zero_based_transformer_block_index" },
+    "quantization_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_type",
+        "architecture",
+        "bits",
+        "group_size",
+        "data_type",
+        "quant_method",
+        "provider",
+        "autoround_version",
+        "num_experts",
+        "num_experts_per_tok",
+        "requires_exact_expert_only"
+      ],
+      "properties": {
+        "model_type": { "type": "string" },
+        "architecture": { "type": "string" },
+        "bits": { "type": "integer" },
+        "group_size": { "type": "integer" },
+        "data_type": { "type": "string" },
+        "quant_method": { "type": "string" },
+        "provider": { "type": "string" },
+        "autoround_version": { "type": "string" },
+        "num_experts": { "type": "integer", "minimum": 1 },
+        "num_experts_per_tok": { "type": "integer", "minimum": 1 },
+        "requires_exact_expert_only": { "const": true }
+      }
+    },
+    "checkpoint_identity_status": { "const": "not_verified" },
+    "feature_kind": { "const": "hidden_state" },
+    "extraction_status": { "const": "not_implemented" }
+  }
+}

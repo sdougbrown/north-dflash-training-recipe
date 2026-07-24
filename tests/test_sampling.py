@@ -27,6 +27,15 @@ class AnchorSamplingTests(unittest.TestCase):
         self.assertEqual(block.loss_mask, (False, True, True, True))
         self.assertEqual(block.absolute_anchor_position, 2 + block.anchor_position)
 
+    def test_sampling_includes_the_last_full_block_and_excludes_the_partial_tail(self):
+        result = sample_anchor_blocks(self.example, block_size=4, max_anchors=100, mask_token_id=9)
+        self.assertEqual(result.eligible_anchor_positions, tuple(range(17)))
+        self.assertEqual(result.anchor_positions[-1], 16)
+        self.assertEqual(result.blocks[-1].labels[1:], (17, 18, 19))
+
+        exact = sample_anchor_blocks(ResponseExample((), (1, 2, 3, 4)), block_size=4, max_anchors=5, mask_token_id=9)
+        self.assertEqual(exact.anchor_positions, (0,))
+
     def test_short_response_has_no_partial_tail_block(self):
         example = ResponseExample((), (1, 2, 3))
         result = sample_anchor_blocks(example, block_size=4, max_anchors=5, mask_token_id=9)

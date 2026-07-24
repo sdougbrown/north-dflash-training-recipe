@@ -11,17 +11,20 @@ PYTHONPATH=src python3 -m north_dflash_training.cli dry-run
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-The dry-run creates synthetic token sequences, samples bounded DFlash blocks, prints paper-aligned loss weights, derives a review-only North candidate from local JSON config, and compares disk/offline feature storage with online and ring-buffer estimates.
+The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
 ## Layout
 
 - `src/north_dflash_training/schema.py` — response-example model and validation
 - `src/north_dflash_training/sampling.py` — deterministic anchor/block sampler
+- `src/north_dflash_training/layout.py` — dependency-free concatenated batch/layout relation (not a FlexAttention mask)
 - `src/north_dflash_training/weights.py` — exponential CE weights
 - `src/north_dflash_training/cache.py` — feature-cache estimator
-- `src/north_dflash_training/candidate.py` — config-only North derivation
+- `src/north_dflash_training/candidate.py` — config/tokenizer-audited North derivation
+- `src/north_dflash_training/teacher.py` — config-fingerprinted, checkpoint-unverified AutoGPTQ feature manifest, without extraction
 - `src/north_dflash_training/cli.py` — synthetic CPU dry-run
 - `schemas/response-example.schema.json` — interchange schema
+- `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
 - `IMPLEMENTATION_STATUS.md` — implemented primitives and integration gaps
 - `tests/` — dependency-free unit tests
@@ -30,4 +33,4 @@ The dry-run creates synthetic token sequences, samples bounded DFlash blocks, pr
 
 Sampling and weighting follow the [DFlash paper](https://arxiv.org/abs/2602.06036), §4.2 and §A.1. The local reference inference checkout is `/home/douglasbrown/Code/dflash`; its architecture-specific model code is deliberately not copied into this foundation. North's local config/tokenizer are read-only inputs to candidate derivation.
 
-See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
+The layout relation is CPU-testable only: tensor construction, FlexAttention/GPU integration, teacher extraction, and training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.

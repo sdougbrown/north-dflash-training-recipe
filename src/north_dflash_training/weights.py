@@ -27,14 +27,15 @@ def exponential_loss_weights(
 
     DFlash predicts ``block_size - 1`` future positions, so by default the
     returned vector is indexed by k=1..block_size-1 and starts at 1.0. Set
-    ``include_anchor=True`` to get a length-``block_size`` vector for tensor
-    bookkeeping; its first value is also 1.0, although the anchor is not a
-    prediction target.
+    ``include_anchor=True`` to prepend an ignored anchor bookkeeping weight;
+    the first predicted future still starts at 1.0.
     """
     if block_size < 2:
         raise ValueError("block_size must be at least 2")
     resolved_gamma = default_gamma(block_size) if gamma is None else gamma
     if resolved_gamma <= 0 or not math.isfinite(resolved_gamma):
         raise ValueError("gamma must be finite and greater than zero")
-    count = block_size if include_anchor else block_size - 1
-    return tuple(math.exp(-position / resolved_gamma) for position in range(count))
+    future_weights = tuple(
+        math.exp(-position / resolved_gamma) for position in range(block_size - 1)
+    )
+    return (1.0,) + future_weights if include_anchor else future_weights

@@ -4,8 +4,9 @@ These are intentionally decisions, not hidden defaults:
 
 - **Target identity:** exact local North `Cohere2MoeForCausalLM`, 49 layers, 2048 hidden size, 4-bit int AutoGPTQ with group size 32 and 128 experts / top-8 routing.
 - **Draft shape:** five layers and block size 16 are paper-shaped candidates only. A dense draft is proposed as an investigation baseline; copying North's MoE is not justified yet.
-- **Layer selection:** `[1, 12, 24, 35, 46]` is mechanically derived using the reference dflash spread formula for 49 target layers and five draft layers. Hidden-state indexing for Cohere2Moe may change this.
-- **Mask token:** unresolved. The scaffold refuses to assert that an arbitrary vocabulary ID is safe. The CLI's synthetic default is not a North decision.
+- **Layer selection:** `[1, 12, 24, 35, 46]` is mechanically derived as zero-based transformer-block indices using the reference dflash spread formula for 49 target layers and five draft layers. The reference Qwen extractor reads `hidden_states[layer_id + 1]`; whether Cohere2Moe has that embedding-output offset is unverified.
+- **Mask token:** tokenizer-audited contract: North's `tokenizer.json` contains special `<MASK_TOKEN>` at ID `1`, consistent in both the added-token table and model vocabulary, and within target `vocab_size: 262144`. No arbitrary CLI fallback is permitted.
 - **Features:** the estimator shows that a dataset-wide raw cache is costly (for 800K × 3072, 5 × 2048 BF16 features: about 45.8 TiB), while a 512-token ring is about 10 MiB for one stream. The actual online/ring design must preserve the feature alignment needed by sampled anchors.
 - **Precision:** BF16 can initialize a draft if approved, but it cannot replace the exact int4 AutoGPTQ expert-only teacher or become the claimed deployment target.
-- **Integration:** sparse attention, AutoGPTQ hidden-state extraction, and vLLM Cohere2Moe auxiliary state are not implemented here and must be reviewed independently.
+- **Layout integration:** the CPU slice now validates concatenated sampled-block ordering, bidirectional within-block visibility, inter-block isolation, and frozen target-context visibility through each clean anchor. This is not yet a tensor/FlexAttention/GPU mask.
+- **Teacher interface:** the manifest fingerprints `config.json` and records complete int4 AutoGPTQ fields and selected block IDs, but explicitly does not verify checkpoint shards; it cannot prove exact-weight identity. Hidden-state extraction and vLLM Cohere2Moe auxiliary state remain unimplemented and must be reviewed independently.
