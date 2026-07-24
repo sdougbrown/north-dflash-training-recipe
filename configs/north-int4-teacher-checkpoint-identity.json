@@ -1,0 +1,51 @@
+{
+  "config": {
+    "relative_path": "config.json",
+    "sha256": "7a81cc0d8f2e34d9ee21093cef51430b57271c152ddaa7735c93a32f4941c366",
+    "size_bytes": 29231
+  },
+  "index": {
+    "relative_path": "model.safetensors.index.json",
+    "sha256": "e8cf2419b32f13e301f7463e5ea8b65befe9cda2dde20a26756c54d5afd6b552",
+    "size_bytes": 6680995
+  },
+  "manifest_sha256": "fca065d1f7df51b17763e5555363c36100d72c638cf318f71ef6c7f9b5319cae",
+  "schema_version": 1,
+  "shards": [
+    {
+      "relative_path": "model-00001-of-00007.safetensors",
+      "sha256": "ddf01af37579ee2207fc67b3c397c4123f27c7b1656ad8c9826c65db03c64c52",
+      "size_bytes": 3217493312
+    },
+    {
+      "relative_path": "model-00002-of-00007.safetensors",
+      "sha256": "eb86f0810a0dc2847d705be6f91408a118ccd987b2c57fb29dfe5cc9a1b0a0d9",
+      "size_bytes": 3222627512
+    },
+    {
+      "relative_path": "model-00003-of-00007.safetensors",
+      "sha256": "d9a4cf9a88502d3fc114372e76880b05f7a20555fffe458e925d5349b7199fa8",
+      "size_bytes": 3222738480
+    },
+    {
+      "relative_path": "model-00004-of-00007.safetensors",
+      "sha256": "71fa9a5e75a61e7a4a95479db46e3f42f4bf93ffc6f586ecccd1a71704b6061b",
+      "size_bytes": 3222738536
+    },
+    {
+      "relative_path": "model-00005-of-00007.safetensors",
+      "sha256": "52ec9add93186ca6855048152f6557aeae91c03a627b94270e9da7412991cda9",
+      "size_bytes": 3206149024
+    },
+    {
+      "relative_path": "model-00006-of-00007.safetensors",
+      "sha256": "ea310fb3e6bfbd0e6388198e06f8534aaf49f09779d97db3a9431eaebe4c152f",
+      "size_bytes": 2709929488
+    },
+    {
+      "relative_path": "model-00007-of-00007.safetensors",
+      "sha256": "d64f57885343e90aececcfbe307033821d84205f1882e58ee940ab327b42d4e9",
+      "size_bytes": 1073746120
+    }
+  ]
+}

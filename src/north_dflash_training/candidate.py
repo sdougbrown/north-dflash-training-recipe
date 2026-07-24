@@ -115,7 +115,7 @@ def derive_north_candidate(
         unresolved.append("Resolve the invalid <MASK_TOKEN> tokenizer audit before training.")
 
     return {
-        "status": "CPU layout tested; tensor/FlexAttention integration missing; not trainable",
+        "status": "CPU layout and bounded optional training-step contract tested; target/FlexAttention integration missing; not trainable",
         "deployment_target": {
             "model_path": str(target_path),
             "tokenizer_path": str(tokenizer_path),

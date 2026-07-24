@@ -27,10 +27,14 @@ imports PyTorch.
 - `src/north_dflash_training/cache.py` — feature-cache estimator
 - `src/north_dflash_training/candidate.py` — config/tokenizer-audited North derivation
 - `src/north_dflash_training/teacher.py` — config-fingerprinted, checkpoint-unverified AutoGPTQ feature manifest, without extraction
+- `src/north_dflash_training/checkpoint_identity.py` — explicit incremental config/index/shard hashing and verification without tensor loading
+- `src/north_dflash_training/training.py` — optional-PyTorch typed teacher-feature, frozen shared-weight, adapter, and weighted-loss contract; includes a synthetic CPU-only adapter
+- `src/north_dflash_training/transformers_draft_adapter.py` — separately capability-gated, deliberately non-running `dflash.DFlashDraftModel` adapter skeleton
 - `src/north_dflash_training/cli.py` — synthetic CPU dry-run
 - `schemas/response-example.schema.json` — interchange schema
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
+- `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the exact deployed teacher
 - `IMPLEMENTATION_STATUS.md` — implemented primitives and integration gaps
 - `tests/` — dependency-free unit tests
 
@@ -38,4 +42,6 @@ imports PyTorch.
 
 Sampling and weighting follow the [DFlash paper](https://arxiv.org/abs/2602.06036), §4.2 and §A.1. The local reference inference checkout is `/home/douglasbrown/Code/dflash`; its architecture-specific model code is deliberately not copied into this foundation. North's local config/tokenizer are read-only inputs to candidate derivation.
 
-The base layout relation remains dependency-free and CPU-testable. With the optional PyTorch extra, the adapter materializes a single packed batch's `[1, Q]` query tensors and a dense `[Q, C + Q]` oracle: frozen context keys `0..C-1` precede query keys, each query sees context through its clean absolute anchor, and query-query attention is bidirectional only within its sampled block. The same rule can construct a FlexAttention `BlockMask` when the installed build exposes `create_block_mask`; this is construction parity only, not an attention-kernel or GPU validation. Teacher extraction and all model/training work remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
+The base layout relation remains dependency-free and CPU-testable. With the optional PyTorch extra, the adapter materializes a single packed batch's `[1, Q]` query tensors and a dense `[Q, C + Q]` oracle: frozen context keys `0..C-1` precede query keys, each query sees context through its clean absolute anchor, and query-query attention is bidirectional only within its sampled block. The optional training contract accepts detached selected clean states in declared layer order, concatenates them to `[B, C, L*H]`, hands frozen embedding/LM-head modules directly to a draft-only adapter, and computes a weighted CE mean over the unshifted masked-future labels. Its synthetic adapter proves only CPU mechanics, not a North/Qwen forward. The same visibility rule can construct a FlexAttention `BlockMask` when the installed build exposes `create_block_mask`; this is construction parity only, not an attention-kernel or GPU validation.
+
+`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. The exact installed North checkpoint has now been explicitly hashed and reverified; its retained manifest is `configs/north-int4-teacher-checkpoint-identity.json`. Exact AutoGPTQ hidden-state extraction, runtime North model integration, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
