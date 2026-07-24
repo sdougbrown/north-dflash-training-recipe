@@ -9,6 +9,9 @@ description = "CPU-only, architecture-independent DFlash training primitives for
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+torch = ["torch>=2.5"]
+
 [project.scripts]
 north-dflash = "north_dflash_training.cli:main"
 
