@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/north-dflash/response-example.schema.json",
+  "title": "North DFlash response example",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "prompt_tokens", "response_tokens"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "prompt_tokens": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "response_tokens": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+    "metadata": {"type": "object"}
+  }
+}
