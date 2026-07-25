@@ -69,8 +69,9 @@ def prepare_streamed_training_step(
     """Align one exact clean token stream with deterministic packed queries.
 
     The connector artifact covers the complete clean ``prompt + response``
-    sequence. Only clean states through the largest sampled absolute anchor are
-    retained for this step, matching ``TorchSparseTrainingBatch.context_length``.
+    sequence. Only clean states strictly before the largest sampled absolute
+    anchor are retained, matching runtime DFlash: the anchor token has been
+    sampled but has not yet passed through the target when the draft proposes.
     """
     streamed.validate()
     token_count = streamed.token_count

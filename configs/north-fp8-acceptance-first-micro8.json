@@ -102,6 +102,8 @@
     "checkpoint_round_trip_resume": true,
     "shared_embedding_unchanged": true,
     "all_training_connectors_released": true,
+    "training_geometry_invalidated_for_acceptance": true,
+    "invalidation_reason": "Target context included the clean anchor state, but runtime DFlash proposes after sampling the anchor and before forwarding it through the target.",
     "automatic_generation_connectors_released_postflight": 8,
     "evidence": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T000000Z-fp8-acceptance-first-micro8"
   },

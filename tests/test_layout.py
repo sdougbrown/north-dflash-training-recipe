@@ -39,15 +39,15 @@ class SparseLayoutTests(unittest.TestCase):
         self.assertFalse(layout.can_query_see_query(0, 4))
         self.assertFalse(layout.can_query_see_query(7, 0))
 
-    def test_target_context_includes_clean_prefix_through_anchor_without_future(self):
+    def test_target_context_includes_clean_prefix_strictly_before_anchor(self):
         example = ResponseExample((10, 11), tuple(range(30)))
         sampled = sample_anchor_blocks(example, block_size=5, max_anchors=3, mask_token_id=1, seed=0)
         layout = build_training_batch_layout(sampled, gamma=2.0)
         for query_index, anchor in enumerate(layout.anchor_positions):
             context = layout.target_context_for_query(query_index)
-            self.assertEqual(context, tuple(range(anchor + 1)))
-            self.assertEqual(context[-1], anchor)
-            self.assertNotIn(anchor + 1, context)
+            self.assertEqual(context, tuple(range(anchor)))
+            self.assertEqual(context[-1], anchor - 1)
+            self.assertNotIn(anchor, context)
         layout.validate()
 
     def test_layout_rejects_shifted_loss_weights_and_non_ignored_anchor_label(self):

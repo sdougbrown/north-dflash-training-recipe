@@ -23,7 +23,7 @@ class SparseTrainingBatchLayout:
     is repeated for each query and is the absolute clean position whose frozen
     target feature may be injected for that query. ``target_context_positions``
     contains every clean target position from the beginning of the sequence
-    through that anchor, never a future target position.
+    strictly before that anchor, never the anchor or a future target position.
 
     ``query_visibility`` is a CPU-only relation over flattened query indices:
     queries in the same block see one another in both directions and queries in
@@ -119,8 +119,8 @@ class SparseTrainingBatchLayout:
             anchor = self.anchor_positions[query_index]
             if self.absolute_query_positions[query_index] != anchor + offset:
                 raise ValueError("absolute query positions do not follow each block anchor")
-            if self.target_context_positions[query_index] != tuple(range(anchor + 1)):
-                raise ValueError("target context must contain all clean positions through the block anchor")
+            if self.target_context_positions[query_index] != tuple(range(anchor)):
+                raise ValueError("target context must contain clean positions strictly before the block anchor")
             if not math.isclose(self.position_weights[query_index], expected_weights[offset]):
                 raise ValueError("position weights do not follow the DFlash loss-decay convention")
             if offset == 0:
@@ -165,7 +165,7 @@ def build_training_batch_layout(
         for offset in range(sampled.block_size)
     )
     position_weights = tuple(weight for _ in sampled.blocks for weight in weights)
-    target_context_positions = tuple(tuple(range(anchor + 1)) for anchor in anchor_positions)
+    target_context_positions = tuple(tuple(range(anchor)) for anchor in anchor_positions)
     query_visibility = tuple(
         tuple(block_ids[row] == block_ids[column] for column in range(len(block_ids)))
         for row in range(len(block_ids))

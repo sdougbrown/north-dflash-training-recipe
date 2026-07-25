@@ -112,6 +112,8 @@
     "shared_vocabulary_unchanged": true,
     "all_training_connectors_released": true,
     "all_generation_connectors_released": true,
+    "training_geometry_invalidated_for_acceptance": true,
+    "invalidation_reason": "Target context included the clean anchor state, causing one-token future leakage relative to runtime proposal ordering.",
     "final_evidence": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T040000Z-fp8-retained-pilot40-chunk04-step40",
     "interpretation": "Construction telemetry only; the lower final-chunk mean is not a held-out quality or acceptance claim."
   },

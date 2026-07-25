@@ -33,7 +33,7 @@ class TorchSparseLayoutTests(unittest.TestCase):
     def test_tensor_inputs_preserve_values_dtypes_and_shapes(self):
         layout = self._layout()
         batch = build_torch_training_batch(layout)
-        context_length = max(layout.block_anchor_positions) + 1
+        context_length = max(layout.block_anchor_positions)
 
         self.assertEqual(batch.input_ids.shape, (1, layout.num_queries))
         self.assertEqual(batch.labels.shape, (1, layout.num_queries))
@@ -67,11 +67,11 @@ class TorchSparseLayoutTests(unittest.TestCase):
         for query_index, anchor in enumerate(layout.anchor_positions):
             self.assertEqual(
                 dense[query_index, :context_length].tolist(),
-                [position <= anchor for position in range(context_length)],
+                [position < anchor for position in range(context_length)],
             )
-            self.assertTrue(dense[query_index, anchor].item())
-            if anchor + 1 < context_length:
-                self.assertFalse(dense[query_index, anchor + 1].item())
+            self.assertTrue(dense[query_index, anchor - 1].item())
+            if anchor < context_length:
+                self.assertFalse(dense[query_index, anchor].item())
 
     def test_flex_predicate_matches_dense_oracle_on_cpu(self):
         batch = build_torch_training_batch(self._layout())

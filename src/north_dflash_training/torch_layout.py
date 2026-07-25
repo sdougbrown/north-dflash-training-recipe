@@ -119,14 +119,14 @@ class TorchSparseTrainingBatch:
 def dense_visibility_oracle(batch: TorchSparseTrainingBatch) -> torch.Tensor:
     """Return the boolean ``[Q, C + Q]`` visibility rule for ``batch``.
 
-    A query sees every frozen context key through its absolute clean anchor and
+    A query sees every frozen context key strictly before its absolute clean anchor and
     only query keys from its own sampled block.  Thus neither future target
     context nor another sampled block can leak into a row.
     """
     query_count = batch.num_queries
     context_count = batch.context_length
     device = batch.input_ids.device
-    context_visible = torch.arange(context_count, device=device).unsqueeze(0) <= (
+    context_visible = torch.arange(context_count, device=device).unsqueeze(0) < (
         batch.anchor_positions[0].unsqueeze(1)
     )
     query_visible = batch.block_ids[0].unsqueeze(1) == batch.block_ids[0].unsqueeze(0)
@@ -150,7 +150,7 @@ def build_torch_training_batch(
         raise ValueError("weight_dtype must be a floating-point torch dtype")
 
     query_count = layout.num_queries
-    context_count = max(layout.block_anchor_positions, default=-1) + 1
+    context_count = max(layout.block_anchor_positions, default=0)
     tensor_kwargs = {"device": device}
     batch = TorchSparseTrainingBatch(
         input_ids=torch.tensor(layout.query_tokens, dtype=torch.int64, **tensor_kwargs).unsqueeze(
@@ -206,7 +206,7 @@ def make_flex_attention_visibility_predicate(
         # Clamp before indexing so torch.where evaluates safely for context keys.
         query_key_index = (key_index - context_count).clamp(min=0, max=last_query_index)
         same_block = block_ids[query_index] == block_ids[query_key_index]
-        visible_context = key_index <= anchors[query_index]
+        visible_context = key_index < anchors[query_index]
         return torch.where(is_context, visible_context, same_block)
 
     return visibility_predicate

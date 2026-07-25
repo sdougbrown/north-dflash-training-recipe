@@ -53,14 +53,14 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
     @staticmethod
     def _visibility():
         # Rows 0/1 belong to the first block anchored at 1; rows 2/3 are a
-        # separate block anchored at 3.  Context key 3 and the second query
-        # block are forbidden to the first block.
+        # separate block anchored at 3. Target context is strictly before the
+        # anchor, and the other query block is always forbidden.
         return torch.tensor(
             [
-                [True, True, False, False, True, True, False, False],
-                [True, True, False, False, True, True, False, False],
-                [True, True, True, True, False, False, True, True],
-                [True, True, True, True, False, False, True, True],
+                [True, False, False, True, True, False, False],
+                [True, False, False, True, True, False, False],
+                [True, True, True, False, False, True, True],
+                [True, True, True, False, False, True, True],
             ],
             dtype=torch.bool,
         )
@@ -68,7 +68,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
     @classmethod
     def _inputs(cls, batch_size=1):
         torch.manual_seed(13)
-        context_length, query_length = 4, 4
+        context_length, query_length = 3, 4
         target_features = torch.randn(batch_size, context_length, 2 * cls.hidden_size)
         noise_embeddings = torch.randn(batch_size, query_length, cls.hidden_size)
         query_positions = torch.tensor([[1, 2, 3, 4]], dtype=torch.int64).expand(batch_size, -1).clone()
@@ -78,7 +78,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
         adapter = TransformersDFlashDraftAdapter.from_reference_model(self._model())
         target, noise, query_positions, visibility = self._inputs(batch_size=2)
         full_positions = full_dflash_position_ids(query_positions, context_length=target.shape[1])
-        self.assertEqual(full_positions.tolist(), [[0, 1, 2, 3, 1, 2, 3, 4]] * 2)
+        self.assertEqual(full_positions.tolist(), [[0, 1, 2, 1, 2, 3, 4]] * 2)
         output = adapter(
             target_features=target,
             noise_embeddings=noise,
@@ -94,7 +94,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
         mask = dense_visibility_to_eager_attention_mask(
             visibility, batch_size=1, dtype=noise.dtype, device=noise.device
         )
-        self.assertEqual(mask.shape, (1, 1, 4, 8))
+        self.assertEqual(mask.shape, (1, 1, 4, 7))
         self.assertTrue(torch.equal(mask[0, 0].eq(0), visibility))
         self.assertTrue(torch.equal(mask[0, 0].eq(torch.finfo(noise.dtype).min), ~visibility))
 
@@ -105,7 +105,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
             dense_visibility=visibility,
         )
         altered_target = target.clone()
-        altered_target[:, 3, :] += 1000.0  # Context 3 is invisible to rows 0/1.
+        altered_target[:, 2, :] += 1000.0  # Context 2 is invisible to rows 0/1.
         altered_noise = noise.clone()
         altered_noise[:, 2:, :] -= 1000.0  # The second query block is invisible to rows 0/1.
         altered = adapter(
@@ -137,7 +137,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
             block_ids=torch.tensor([[0, 0, 1, 1]], dtype=torch.int64),
             anchor_positions=torch.tensor([[1, 1, 3, 3]], dtype=torch.int64),
             absolute_query_positions=positions,
-            context_positions=torch.arange(4, dtype=torch.int64),
+            context_positions=torch.arange(3, dtype=torch.int64),
             dense_visibility=visibility,
             mask_token_id=0,
         )
@@ -145,7 +145,7 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
         bundle = TeacherFeatureBundle(
             selected_layer_ids=(0, 2),
             hidden_states=(target[..., : self.hidden_size], target[..., self.hidden_size :]),
-            clean_positions=torch.arange(4, dtype=torch.int64),
+            clean_positions=torch.arange(3, dtype=torch.int64),
         )
         output = step(batch, bundle)
         output.loss.backward()
@@ -174,14 +174,14 @@ class TransformersDFlashDraftAdapterTests(unittest.TestCase):
             block_ids=torch.tensor([[0, 0, 1, 1]], dtype=torch.int64),
             anchor_positions=torch.tensor([[1, 1, 3, 3]], dtype=torch.int64),
             absolute_query_positions=positions,
-            context_positions=torch.arange(4, dtype=torch.int64),
+            context_positions=torch.arange(3, dtype=torch.int64),
             dense_visibility=visibility,
             mask_token_id=0,
         )
         bundle = TeacherFeatureBundle(
             selected_layer_ids=(0, 2),
             hidden_states=(target[..., : self.hidden_size], target[..., self.hidden_size :]),
-            clean_positions=torch.arange(4, dtype=torch.int64),
+            clean_positions=torch.arange(3, dtype=torch.int64),
         )
         optimizer = torch.optim.AdamW(step.parameters(), lr=0.01)
         initial = step(batch, bundle).loss.detach().item()
