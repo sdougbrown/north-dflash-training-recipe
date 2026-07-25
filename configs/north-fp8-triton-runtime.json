@@ -31,8 +31,19 @@
     "ring_empty_after_acknowledgement": true,
     "checkpoint_written": false
   },
+  "transient_release_gate": {
+    "recipe_commit": "f7d69b9",
+    "feature_file_bytes_released": 754008,
+    "feature_tensor_bytes_consumed": 753664,
+    "feature_sha256": "5f2f799f8060a8193dc6d3f2538493235b770f722edac2314f2199d9f60c705f",
+    "lock_file_released": true,
+    "feature_and_lock_absent_postflight": true,
+    "release_order": "matching optimizer step, ring acknowledgement, unchanged-file revalidation, unlink",
+    "scope": "in-process sequencing only; no durable crash/restart commit ledger"
+  },
   "evidence": {
     "exact_teacher_repeat": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T155500Z-fp8-eight-repeat-no-prefix",
-    "live_ring_one_optimizer_step": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T200000Z-fp8-live-ring-one-optimizer-step"
+    "live_ring_one_optimizer_step": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T200000Z-fp8-live-ring-one-optimizer-step",
+    "live_transient_release": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T213000Z-fp8-live-transient-release"
   }
 }
