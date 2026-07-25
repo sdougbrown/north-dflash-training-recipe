@@ -1,8 +1,8 @@
 # North DFlash training scaffold
 
-A bounded, CPU-only foundation for investigating a DFlash draft model matched to the local `North-Mini-Code-1.0-int4-autoround-gptq-g32` deployment.
+A bounded, CPU-only foundation for investigating target-matched DFlash draft models for local North AutoGPTQ INT4, Cohere NVFP4 W4A16, and Cohere FP8 verifiers.
 
-**This is not a training-ready recipe.** It does not load North, download data, use a GPU, modify model files, or contact the running server. BF16 is mentioned only as a possible initializer; the target deployment remains the exact expert-only int4 AutoGPTQ model.
+**This is not a training-ready recipe.** Its code does not load North, download data, use a GPU, modify model files, or contact a running server. BF16 is mentioned only as a possible draft initializer; each training branch must remain matched to one exact quantized verifier.
 
 ## Quick start
 
@@ -21,7 +21,7 @@ an explicit acknowledgement. It cannot overwrite an output and fails closed if
 the local vLLM loader contract is not provable. It never trains, evaluates
 acceptance, or starts a GPU/server. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md).
 
-The random smoke artifact has passed a construction/load-only TP=2 gate against the exact INT4 target on a pinned ROCm 7.2.4 image. A subsequent bounded extraction trace proved the five-feature mapping `[1, 12, 24, 35, 46]` → `[2, 13, 25, 36, 47]`, BF16 shape `[23, 5, 2048]`, exact tokenizer alignment, and byte-identical values on both TP ranks. No training was attempted; the repository still lacks a bounded online consumer. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+The random smoke artifact has passed a construction/load-only TP=2 gate against the exact AutoGPTQ target on a pinned ROCm 7.2.4 image. Subsequent bounded traces proved the five-feature mapping `[1, 12, 24, 35, 46]` → `[2, 13, 25, 36, 47]` for both AutoGPTQ on Rocky and Cohere W4A16/MARLIN on Bitey, each with BF16 shape `[23, 5, 2048]` and exact tokenizer alignment. Their feature values are not identical, so they remain separate target families. No training was attempted; the repository still lacks a bounded online consumer. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
@@ -47,7 +47,8 @@ imports PyTorch.
 - `schemas/response-example.schema.json` — interchange schema
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
-- `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the exact deployed teacher
+- `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the AutoGPTQ teacher
+- `configs/north-w4a16-teacher-checkpoint-identity.json` — independently verified config/index/four-shard identity for Cohere's W4A16 teacher
 - `docs/RUNTIME_PROBE.md` — artifact constraints, runtime identity rules, passed Rocky smoke evidence, and stop criteria
 - `IMPLEMENTATION_STATUS.md` — implemented primitives and integration gaps
 - `tests/` — dependency-free unit tests
@@ -58,4 +59,4 @@ Sampling and weighting follow the [DFlash paper](https://arxiv.org/abs/2602.0603
 
 The base layout relation remains dependency-free and CPU-testable. With the optional PyTorch extra, the adapter materializes a single packed batch's `[1, Q]` query tensors and a dense `[Q, C + Q]` oracle: frozen context keys `0..C-1` precede query keys, each query sees context through its clean absolute anchor, and query-query attention is bidirectional only within its sampled block. The optional training contract accepts detached selected clean states in declared layer order, concatenates them to `[B, C, L*H]`, hands frozen embedding/LM-head modules directly to a draft-only adapter, and computes a weighted CE mean over the unshifted masked-future labels. The optional local-reference adapter additionally proves a tiny random Qwen3/DFlash eager CPU forward, exact mask construction, draft-only gradients, and bounded optimization; it is not a North forward. It supports no cache or FlexAttention. The same visibility rule can construct a FlexAttention `BlockMask` when the installed build exposes `create_block_mask`; this is construction parity only, not an attention-kernel or GPU validation.
 
-`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. The exact installed North checkpoint has now been explicitly hashed and reverified; its retained manifest is `configs/north-int4-teacher-checkpoint-identity.json`. The isolated runtime gates prove one-layer DFlash construction and exact five-feature INT4 extraction, but this repository does not yet consume those features online. Bounded connector consumption, mask/embedding/LM-head training handoff, the eight-feature extraction gate, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
+`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. Exact AutoGPTQ and W4A16 checkpoint identities are retained under `configs/`. Isolated runtime gates prove one-layer DFlash construction and exact five-feature extraction for those two targets, but this repository does not yet consume their features online. FP8 identity/extraction, bounded connector consumption, mask/embedding/LM-head training handoff, the eight-feature extraction gate, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.

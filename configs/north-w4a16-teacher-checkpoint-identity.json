@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "config": {
+    "relative_path": "config.json",
+    "size_bytes": 15249,
+    "sha256": "32ae354fc24005da6acd59ec29442c22790b9ad96a636634c7ecdc85968e7326"
+  },
+  "index": {
+    "relative_path": "model.safetensors.index.json",
+    "size_bytes": 7135346,
+    "sha256": "b02d9e50292c32873ac715b78b355714c754790f16a82e124e1e5ec67da0df86"
+  },
+  "shards": [
+    {
+      "relative_path": "model-00001-of-00004.safetensors",
+      "size_bytes": 5372290582,
+      "sha256": "0522c3999766bb1a1f94991e1faa0f54ae69b19eb864acd2541f17c17f2d4370"
+    },
+    {
+      "relative_path": "model-00002-of-00004.safetensors",
+      "size_bytes": 5370206950,
+      "sha256": "378994dc59d90c4b7bb300adaede90308fe19b558be2a7f0d9204c82fa9d8b51"
+    },
+    {
+      "relative_path": "model-00003-of-00004.safetensors",
+      "size_bytes": 5370876144,
+      "sha256": "50774d1fb54a39d7791ee39a31c897a0bc825e30961e92d35cfb815497bb3d6b"
+    },
+    {
+      "relative_path": "model-00004-of-00004.safetensors",
+      "size_bytes": 3234214028,
+      "sha256": "f25824e9d21451f5810e1c0d6bad72655e0c7d52d930eca27fb63a3b7eeb73bf"
+    }
+  ],
+  "manifest_sha256": "64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a"
+}

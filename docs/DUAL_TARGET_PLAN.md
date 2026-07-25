@@ -1,21 +1,21 @@
-# Dual-target North DFlash execution plan
+# Three-target North DFlash execution plan
 
-When the deployed verifier changes precision, its generated tokens and hidden states can change too. A drafter that accepts well against the deployed INT4 verifier is therefore not automatically a drafter for the deployed FP8 verifier. This plan produces and evaluates separate DFlash families against those two production targets.
+When the deployed verifier changes checkpoint or precision, its generated tokens and hidden states can change too. A drafter that accepts well against one quantized North verifier is not automatically matched to another. This plan produces and evaluates separate DFlash families for AutoRound GPTQ INT4, Cohere's QAD-trained NVFP4 W4A16 release, and Cohere's FP8 release. The filename is retained to avoid breaking existing references.
 
-**Reader:** the operator planning North-specific training and serving validation. **Outcome:** two independently evidenced, target-matched BF16 draft checkpoints, with an optional FP8-weight export evaluated for each. **Prerequisites:** the candidate geometry review in [North draft candidates](NORTH_DRAFT_CANDIDATES.md), the current architectural boundaries in [Architecture decisions](ARCHITECTURE_DECISIONS.md), and the known implementation gaps in [Implementation status](../IMPLEMENTATION_STATUS.md).
+**Reader:** the operator planning North-specific training and serving validation. **Outcome:** three independently evidenced, target-matched BF16 draft checkpoints, with an optional FP8-weight export evaluated for each. **Prerequisites:** the candidate geometry review in [North draft candidates](NORTH_DRAFT_CANDIDATES.md), the current architectural boundaries in [Architecture decisions](ARCHITECTURE_DECISIONS.md), and the known implementation gaps in [Implementation status](../IMPLEMENTATION_STATUS.md).
 
-The primary objective is acceptance against the exact production target distribution. A BF16 North model, a dequantized copy, or a differently quantized checkpoint is not a substitute for either deployed verifier.
+The primary objective is acceptance against the exact production target distribution. A BF16 North model, a dequantized copy, or a differently quantized checkpoint is not a substitute for any deployed verifier.
 
 ## Two independent precision axes
 
 Treat this as a pairing problem, like fitting a key to one lock at a time:
 
-- **Verifier target** identifies the exact North checkpoint and serving behavior that generates responses, produces hidden states, and verifies draft tokens. It is either `NorthINT4Target` (the deployed expert-only AutoGPTQ INT4 checkpoint) or `NorthFP8Target` (the deployed FP8 checkpoint).
+- **Verifier target** identifies the exact North checkpoint and serving behavior that generates responses, produces hidden states, and verifies draft tokens. It is `NorthINT4Target` (expert-only AutoGPTQ group-32), `NorthW4A16Target` (Cohere's expert-only NVFP4 group-16/QAD checkpoint), or `NorthFP8Target` (Cohere's FP8 checkpoint).
 - **Draft-weight precision** identifies only how a trained draft is stored and served: canonical `BF16Draft`, or optional post-training `FP8Draft`.
 
 Every branch trains its canonical artifact in BF16. FP8 is not a teacher choice and is not a second training target; it is a post-training deployment export that must be measured against the same target and must win empirically before use.
 
-Do not pool INT4 and FP8 features into one unconditioned draft and call it target matched. Shared prompts, candidate definitions, base/random initialization hashes, code, and infrastructure are allowed. Target-generated response tokens, online features, final adaptation state, checkpoint identity, evaluation evidence, and promotion decisions are not shared.
+Do not pool AutoGPTQ, W4A16, and FP8 features into one unconditioned draft and call it target matched. Shared prompts, candidate definitions, base/random initialization hashes, code, and infrastructure are allowed. Target-generated response tokens, online features, final adaptation state, checkpoint identity, evaluation evidence, and promotion decisions are not shared.
 
 A branch may warm-start from the other target only as a declared experiment. Its record must identify the source checkpoint and its target, then repeat final adaptation, matched evaluation, and all acceptance gates against the destination target. Warm-start evidence does not transfer promotion eligibility.
 
@@ -27,6 +27,8 @@ The following are the only promotion candidates. The BF16 rows are canonical tra
 | --- | --- | --- | --- | --- |
 | exact INT4 AutoGPTQ | BF16 | `North-DFlash-NorthINT4Target-BF16Draft` | canonical INT4-paired training checkpoint | yes, with the INT4 verifier only |
 | exact INT4 AutoGPTQ | FP8 | `North-DFlash-NorthINT4Target-FP8Draft` | post-training export of the INT4 BF16 draft | only if it wins the INT4 BF16-versus-FP8 comparison |
+| exact Cohere NVFP4 W4A16 | BF16 | `North-DFlash-NorthW4A16Target-BF16Draft` | canonical W4A16-paired training checkpoint | yes, with the W4A16 verifier only |
+| exact Cohere NVFP4 W4A16 | FP8 | `North-DFlash-NorthW4A16Target-FP8Draft` | post-training export of the W4A16 BF16 draft | only if it wins the W4A16 BF16-versus-FP8 comparison |
 | exact FP8 | BF16 | `North-DFlash-NorthFP8Target-BF16Draft` | canonical FP8-paired training checkpoint | yes, with the FP8 verifier only |
 | exact FP8 | FP8 | `North-DFlash-NorthFP8Target-FP8Draft` | post-training export of the FP8 BF16 draft | only if it wins the FP8 BF16-versus-FP8 comparison |
 
@@ -41,6 +43,8 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 - Both geometry candidates remain review candidates: 8 full draft layers with 5 target features, and 6 layers with 5 sliding plus 1 full layer and 8 target features. No North geometry is selected.
 - A random one-layer North-shaped smoke artifact passed an isolated exact-INT4 TP=2 construction/load gate. Both ranks proved block 24 → extractor entry 25, a 2048-wide auxiliary tensor, a 2048-wide draft `fc` input, and actual one-layer context-KV construction with 4 global KV heads × 128 dimensions. The runtime stopped before generation and grants no serving or training evidence.
 - One bounded exact-INT4 extraction request proved the five-feature mapping `[1, 12, 24, 35, 46]` → `[2, 13, 25, 36, 47]`, shape `[23, 5, 2048]`, BF16 dtype, tokenizer order, and byte-identical values across both TP ranks and the connector artifact. This is deterministic Phase 2 feature evidence, not a training dataset.
+- `configs/north-w4a16-teacher-checkpoint-identity.json` hashes Cohere's four-shard expert-only NVFP4 W4A16 checkpoint. Rocky and Bitey independently produced manifest digest `64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a` over 19,354,738,299 bytes.
+- Bitey loaded that exact checkpoint with vLLM 0.25.1 and the narrow reviewed Cohere overlay, selecting MARLIN NVFP4 MoE. All 18,432 filtered expert-bias placeholders, totaling 22,020,096 BF16 values, were exactly zero. A bounded request produced aligned BF16 `[23, 5, 2048]` features for the five-feature mapping. Its feature values differ measurably from AutoGPTQ while retaining high cosine similarity, confirming that W4A16 needs its own matched branch.
 
 ### Not yet evidence
 
@@ -56,9 +60,9 @@ A phase produces a versioned evidence record or stops. A failed or missing recor
 
 ### 0. Freeze the evaluation contract
 
-Before loading either target, define one versioned prompt suite, decoding policy, request mix, context-length buckets, repetitions, baseline target-only measurements, and pass/fail thresholds. The contract must specify how acceptance, accepted tokens per step, latency, throughput, resident memory, and long-context behavior are measured. Use identical methodology for both target branches, but retain outputs and reports separately.
+Before loading any target, define one versioned prompt suite, decoding policy, request mix, context-length buckets, repetitions, baseline target-only measurements, and pass/fail thresholds. The contract must specify how acceptance, accepted tokens per step, latency, throughput, resident memory, and long-context behavior are measured. Use identical methodology for all target branches, but retain outputs and reports separately.
 
-Record the shared prompt-set identity once. Responses generated from it are target-specific: `responses/NorthINT4Target/...` and `responses/NorthFP8Target/...`.
+Record the shared prompt-set identity once. Responses generated from it are target-specific: `responses/NorthINT4Target/...`, `responses/NorthW4A16Target/...`, and `responses/NorthFP8Target/...`.
 
 **Gate:** reviewers approve the contract and its thresholds before seeing candidate results. Otherwise stop; thresholds may not be tuned after an outcome is known.
 
@@ -66,7 +70,9 @@ Record the shared prompt-set identity once. Responses generated from it are targ
 
 For `NorthINT4Target`, reverify the retained `configs/north-int4-teacher-checkpoint-identity.json` immediately before extraction and serving evaluation. It must still match the exact config, index, and all declared shards.
 
-For `NorthFP8Target`, create and independently reverify an equivalent config/index/shard identity manifest using the same bounded, no-tensor-loading identity method. Record the deployed model location, serving image/revision, quantization configuration, tokenizer identity, and tensor-parallel topology for both targets.
+For `NorthW4A16Target`, reverify `configs/north-w4a16-teacher-checkpoint-identity.json` before extraction and evaluation. Preserve the exact backend and platform in each run because Bitey's CUDA MARLIN path and Rocky's ROCm fallback are distinct deployed verifier distributions.
+
+For `NorthFP8Target`, create and independently reverify an equivalent config/index/shard identity manifest using the same bounded, no-tensor-loading identity method. Record the deployed model location, serving image/revision, quantization configuration, tokenizer identity, and tensor-parallel topology for all targets.
 
 **Gate:** hash or identity mismatch, missing declared files, incompatible tokenizer, changed serving revision, or an unrecorded quantization change stops that branch. Do not replace the target with BF16 to continue.
 
@@ -85,7 +91,7 @@ Implement and test one target at a time. For each target branch:
 
 ### 3. Generate matched training examples online
 
-For the active target only, use that exact verifier to generate the response tokens and perform teacher forwards that supply the selected hidden states. INT4 examples and features feed only the INT4 branch; FP8 examples and features feed only the FP8 branch.
+For the active target only, use that exact verifier to generate the response tokens and perform teacher forwards that supply the selected hidden states. AutoGPTQ, W4A16, and FP8 examples and features feed only their corresponding branches.
 
 Do not materialize a full hidden-state corpus. Feed detached states directly to training or retain only a bounded ring buffer sized and documented for the active job. Store response tokens and prompt/result metadata by target, but discard feature tensors after their bounded online lifetime.
 
@@ -122,12 +128,13 @@ Rocky serving gates require resident target and draft weights. Do not use CPU or
 
 ### 7. Measure matched acceptance and cross-pair diagnostics
 
-Evaluate the two canonical BF16 drafts in the fixed 2×2 matrix below. All cells use the same frozen contract, but only diagonal evidence is eligible for promotion.
+Evaluate the three canonical BF16 drafts in the fixed 3×3 matrix below. All cells use the same frozen contract, but only diagonal evidence is eligible for promotion.
 
-| Draft checkpoint | INT4 verifier | FP8 verifier |
-| --- | --- | --- |
-| `North-DFlash-NorthINT4Target-BF16Draft` | **matched: promotion evidence** | diagnostic only; never promotable |
-| `North-DFlash-NorthFP8Target-BF16Draft` | diagnostic only; never promotable | **matched: promotion evidence** |
+| Draft checkpoint | AutoGPTQ verifier | W4A16 verifier | FP8 verifier |
+| --- | --- | --- | --- |
+| `North-DFlash-NorthINT4Target-BF16Draft` | **matched: promotion evidence** | diagnostic only; never promotable | diagnostic only; never promotable |
+| `North-DFlash-NorthW4A16Target-BF16Draft` | diagnostic only; never promotable | **matched: promotion evidence** | diagnostic only; never promotable |
+| `North-DFlash-NorthFP8Target-BF16Draft` | diagnostic only; never promotable | diagnostic only; never promotable | **matched: promotion evidence** |
 
 For every cell, report acceptance, accepted tokens per step, draft latency, verifier latency, end-to-end throughput, memory, and long-context behavior. The off-diagonal cells diagnose distribution sensitivity and regression risk; they cannot turn either draft into a cross-target deployment candidate.
 
@@ -138,6 +145,7 @@ For every cell, report acceptance, accepted tokens per step, draft latency, veri
 Only after a matched BF16 checkpoint passes Phase 7, produce its corresponding FP8 draft-weight export and run an A/B evaluation with the same verifier and contract:
 
 - `North-DFlash-NorthINT4Target-BF16Draft` versus `North-DFlash-NorthINT4Target-FP8Draft` on `NorthINT4Target`.
+- `North-DFlash-NorthW4A16Target-BF16Draft` versus `North-DFlash-NorthW4A16Target-FP8Draft` on `NorthW4A16Target`.
 - `North-DFlash-NorthFP8Target-BF16Draft` versus `North-DFlash-NorthFP8Target-FP8Draft` on `NorthFP8Target`.
 
 Measure acceptance, accepted tokens per step, draft latency, verifier latency, end-to-end throughput, resident memory, and long-context behavior. Also record ROCm load/runtime compatibility and stability. The verifier remains unchanged throughout each comparison; only draft-weight precision changes.
@@ -152,7 +160,7 @@ Monitor the production request mix using the contract's acceptance and latency s
 
 ## Resource and storage policy
 
-- **Bitey:** run one exact teacher and one draft/training state at a time. CPU and CUDA share unified physical memory, so the plan does not require simultaneous INT4 and FP8 teachers or parallel target branches.
+- **Bitey:** run one exact teacher and one draft/training state at a time. CPU and CUDA share unified physical memory, so the plan does not require simultaneous AutoGPTQ, W4A16, and FP8 teachers or parallel target branches.
 - **Rocky:** serving measurements use resident weights only. CPU/UVA offload is outside acceptance evidence.
 - **Features:** use online teacher forwards or a bounded ring buffer. Never cache the full hidden-state corpus.
 - **Retention:** retain source identity manifests, target-specific response-token datasets, checkpoint/optimizer state needed for resume, manifests, and acceptance evidence. Do not retain transient feature tensors beyond the declared ring-buffer lifetime.
@@ -162,11 +170,11 @@ Monitor the production request mix using the contract's acceptance and latency s
 
 This plan does not:
 
-- train or promote one pooled, unconditioned INT4+FP8 draft;
+- train or promote one pooled, unconditioned AutoGPTQ+W4A16+FP8 draft;
 - call a BF16 teacher equivalent to either deployed quantized verifier;
 - select either geometry without target-specific measurements;
 - treat a warm-start, static source audit, CPU reference forward, random artifact, or interrupted runtime-probe work as a passed serving gate;
-- require concurrent INT4 and FP8 teachers, a full feature cache, CPU/UVA offload, or FP8 draft deployment;
+- require concurrent quantized teachers, a full feature cache, CPU/UVA offload, or FP8 draft deployment;
 - promote an off-diagonal cross-pair result.
 
 For geometry assumptions and their current restrictions, see [North draft candidates](NORTH_DRAFT_CANDIDATES.md). For the existing model and feature-contract boundaries, see [Architecture decisions](ARCHITECTURE_DECISIONS.md) and [Implementation status](../IMPLEMENTATION_STATUS.md).
