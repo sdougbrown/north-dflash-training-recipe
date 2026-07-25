@@ -205,6 +205,10 @@ class BoundedFeatureRing:
     def feature_bytes(self) -> int:
         return self._bytes
 
+    def contains_request(self, request_id: str) -> bool:
+        """Return whether a request is still active without exposing ring items."""
+        return request_id in self._request_ids
+
     def put(self, batch: StreamedTeacherBatch) -> None:
         batch.validate()
         if batch.runtime_identity != self.runtime_identity:
