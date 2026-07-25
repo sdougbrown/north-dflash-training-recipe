@@ -50,7 +50,7 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 
 ### Not yet evidence
 
-- One live deterministic W4A16 server-to-ring-to-optimizer transaction passes with teacher/training state separation, transactional ring acknowledgement, exact tied vocabulary preservation, and no checkpoint write. Continuous scheduling, bounded transient-file release, AutoGPTQ/FP8 optimizer gates, multi-layer draft target-feature/KV integration, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput remain unverified. The gate advances the deterministic Phase 2/3 construction boundary but is not a pilot.
+- Separate live AutoGPTQ TP=2, deterministic W4A16/MARLIN, and FP8/TRITON server-to-ring-to-optimizer transactions pass with teacher/training state separation, transactional ring acknowledgement, exact tied vocabulary preservation, and no checkpoint write. Continuous scheduling, bounded transient-file release, multi-layer draft target-feature/KV integration, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput remain unverified. These gates advance the deterministic Phase 2/3 construction boundary but are not pilots.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
 This plan does not turn CPU construction parity, a random probe, or a static loader reading into serving evidence.

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "target_name": "NorthAutoGPTQG32Target",
+  "checkpoint_manifest_sha256": "fca065d1f7df51b17763e5555363c36100d72c638cf318f71ef6c7f9b5319cae",
+  "runtime_image": "local/vllm-openai-rocm:v0.25.1-north-dflash-smoke-contract-rocm724",
+  "runtime_image_id": "sha256:a9d87b38707e3879b956d232bcfff44309453cc1e88aacfa506375c1856bafef",
+  "platform": "Rocky dual Radeon AI PRO R9700 ROCm 7.2.4",
+  "backend": "AUTO_GPTQ_TRITON_MOE_TP2",
+  "tensor_parallel_size": 2,
+  "collective_protocol": "NCCL_PROTO=Simple",
+  "prefix_caching": false,
+  "feature_cache_block_size": 64,
+  "target_block_ids": [1, 7, 14, 20, 27, 33, 40, 46],
+  "extractor_entry_ids": [2, 8, 15, 21, 28, 34, 41, 47],
+  "exact_feature_trace": {
+    "shape": [23, 8, 2048],
+    "dtype": "torch.bfloat16",
+    "sha256": "c97bbcd55004bebd4b43a65feefc91046226adf74504f9fddc1a550cbd196b89",
+    "tp_rank_values_byte_identical": true
+  },
+  "one_optimizer_step": {
+    "recipe_commit": "40aeaa5",
+    "dflash_reference_commit": "94e4abc5e0c31b67bc1a9d30f1cc34ece28a8756",
+    "draft_geometry": "one full-attention layer, eight teacher features",
+    "draft_dtype": "torch.bfloat16",
+    "training_device_count": 1,
+    "block_size": 8,
+    "query_count": 8,
+    "active_label_count": 7,
+    "loss": 15.968596458435059,
+    "gradient_norm_before_clipping": 119.5,
+    "updated_parameter_tensors": 14,
+    "frozen_embedding_unchanged": true,
+    "ring_empty_after_acknowledgement": true,
+    "checkpoint_written": false
+  },
+  "evidence": {
+    "exact_teacher_tp_proof": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T160100Z-int4-eight-layer-tp-hash",
+    "live_ring_one_optimizer_step": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T203000Z-int4-live-ring-one-optimizer-step"
+  }
+}

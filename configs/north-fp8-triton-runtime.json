@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "target_name": "NorthFP8Target",
+  "checkpoint_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+  "runtime_image": "local/vllm-openai-cuda:v0.25.1-north-dflash-w4a16",
+  "runtime_image_id": "sha256:d89ae2666c80ea7d64c903670cd5b8a643f03e878c65aa21b534bc6792dba637",
+  "platform": "Bitey NVIDIA GB10 CUDA 13",
+  "backend": "TRITON_FP8_MOE",
+  "tensor_parallel_size": 1,
+  "prefix_caching": false,
+  "target_block_ids": [1, 7, 14, 20, 27, 33, 40, 46],
+  "extractor_entry_ids": [2, 8, 15, 21, 28, 34, 41, 47],
+  "exact_feature_trace": {
+    "shape": [23, 8, 2048],
+    "dtype": "torch.bfloat16",
+    "sha256": "5f2f799f8060a8193dc6d3f2538493235b770f722edac2314f2199d9f60c705f",
+    "repeatable_byte_identically": true
+  },
+  "one_optimizer_step": {
+    "recipe_commit": "40aeaa5",
+    "dflash_reference_commit": "94e4abc5e0c31b67bc1a9d30f1cc34ece28a8756",
+    "draft_geometry": "one full-attention layer, eight teacher features",
+    "draft_dtype": "torch.bfloat16",
+    "block_size": 8,
+    "query_count": 8,
+    "active_label_count": 7,
+    "loss": 16.023977279663086,
+    "gradient_norm_before_clipping": 120.0,
+    "updated_parameter_tensors": 14,
+    "frozen_embedding_unchanged": true,
+    "ring_empty_after_acknowledgement": true,
+    "checkpoint_written": false
+  },
+  "evidence": {
+    "exact_teacher_repeat": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T155500Z-fp8-eight-repeat-no-prefix",
+    "live_ring_one_optimizer_step": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T200000Z-fp8-live-ring-one-optimizer-step"
+  }
+}
