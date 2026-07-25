@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--previous-manifest-sha256", required=True)
     parser.add_argument("--expected-previous-steps", type=int, required=True)
     parser.add_argument("--max-anchors", type=int, default=1)
+    parser.add_argument("--learning-rate", type=float, default=2e-5)
     parser.add_argument("--server", default="http://127.0.0.1:8093")
     parser.add_argument("--served-model", default="north-fp8-retained-pilot")
     return parser.parse_args()
@@ -63,6 +64,8 @@ def main() -> None:
         raise RuntimeError("continuation requires a retained prior step")
     if args.max_anchors < 1 or args.max_anchors > 64:
         raise RuntimeError("max_anchors must be between 1 and 64")
+    if not math.isfinite(args.learning_rate) or args.learning_rate <= 0:
+        raise RuntimeError("learning_rate must be finite and positive")
     case_ids = tuple(args.case_id)
     cases = load_selected_cases(args.source, case_ids)
     final_steps = args.expected_previous_steps + len(cases)
@@ -202,7 +205,9 @@ def main() -> None:
     embedding, embedding_hash_before = base.load_exact_embedding(args.model, device)
     draft = base.build_draft(device)
     training_step = base.build_training_step(draft, embedding)
-    optimizer = torch.optim.AdamW(training_step.parameters(), lr=2e-5, weight_decay=0.01)
+    optimizer = torch.optim.AdamW(
+        training_step.parameters(), lr=args.learning_rate, weight_decay=0.01
+    )
     previous_manifest, previous_requests, previous_responses = resume_checkpoint(
         args.previous_checkpoint,
         training_step=training_step,
@@ -213,6 +218,10 @@ def main() -> None:
     )
     if previous_manifest.step_count != args.expected_previous_steps:
         raise RuntimeError("previous checkpoint step count drifted")
+    # A continuation may deliberately begin a new learning-rate phase. Resume
+    # restores moments and prior hyperparameters first; only LR is then replaced.
+    for group in optimizer.param_groups:
+        group["lr"] = args.learning_rate
     draft_fc_before = base.tensor_sha256(draft.fc.weight)
 
     current_request_records = []
@@ -296,7 +305,9 @@ def main() -> None:
     torch.cuda.empty_cache()
     fresh_draft = base.build_draft(device)
     fresh_step = base.build_training_step(fresh_draft, embedding)
-    fresh_optimizer = torch.optim.AdamW(fresh_step.parameters(), lr=2e-5, weight_decay=0.01)
+    fresh_optimizer = torch.optim.AdamW(
+        fresh_step.parameters(), lr=args.learning_rate, weight_decay=0.01
+    )
     resumed_manifest, resumed_requests, resumed_responses = resume_checkpoint(
         checkpoint_path,
         training_step=fresh_step,
@@ -343,6 +354,7 @@ def main() -> None:
             "current_step_count": len(step_results),
             "cumulative_step_count": final_steps,
             "max_anchors_per_example": args.max_anchors,
+            "learning_rate": args.learning_rate,
         },
         "connector_releases": release_results,
         "generation_connector_releases": generation_releases,
