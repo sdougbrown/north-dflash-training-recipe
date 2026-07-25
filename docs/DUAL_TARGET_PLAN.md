@@ -50,7 +50,7 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 
 ### Not yet evidence
 
-- A bounded online/ring-buffer consumer, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The five- and eight-feature traces satisfy only the feature indexing/order/rank-completeness portion of the deterministic Phase 2 gate.
+- Live server-to-ring orchestration, transient connector-file lifecycle, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. A fail-closed in-memory consumer and five/eight-feature traces satisfy the identity/indexing/order/rank-completeness/bounded-memory portions of the deterministic Phase 2/3 boundary only.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
 This plan does not turn CPU construction parity, a random probe, or a static loader reading into serving evidence.

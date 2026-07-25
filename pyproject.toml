@@ -11,6 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 torch = ["torch>=2.5"]
+runtime = ["torch>=2.5", "safetensors>=0.4"]
 
 [project.scripts]
 north-dflash = "north_dflash_training.cli:main"

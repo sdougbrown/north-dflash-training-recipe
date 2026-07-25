@@ -21,13 +21,13 @@ an explicit acknowledgement. It cannot overwrite an output and fails closed if
 the local vLLM loader contract is not provable. It never trains, evaluates
 acceptance, or starts a GPU/server. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md).
 
-The random smoke artifact has passed a construction/load-only TP=2 gate against the exact AutoGPTQ target on a pinned ROCm 7.2.4 image. Subsequent bounded traces proved both the five-feature and eight-feature mappings for AutoGPTQ on Rocky, Cohere W4A16/MARLIN on Bitey, and Cohere FP8/TRITON on Bitey. Each produced ordered 2048-wide BF16 features with exact tokenizer alignment, but target feature tensors differ. Teacher extraction must disable prefix caching; W4A16/MARLIN also exhibits small bounded numerical nondeterminism across repeated forwards. No training was attempted, and the repository still lacks a bounded online consumer. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+The random smoke artifact has passed a construction/load-only TP=2 gate against the exact AutoGPTQ target on a pinned ROCm 7.2.4 image. Subsequent bounded traces proved both the five-feature and eight-feature mappings for AutoGPTQ on Rocky, Cohere W4A16/MARLIN on Bitey, and Cohere FP8/TRITON on Bitey. Each produced ordered 2048-wide BF16 features with exact tokenizer alignment, but target feature tensors differ. Teacher extraction must disable prefix caching; W4A16/MARLIN also exhibits small bounded numerical nondeterminism across repeated forwards. A fail-closed in-memory consumer now validates and owns one connector result at a time with bounded queue backpressure, but live server orchestration and training handoff remain missing. No training was attempted. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
-For the optional CPU tensor adapter, install `.[torch]`. It lives in
-`north_dflash_training.torch_layout`, so importing the base package never
-imports PyTorch.
+For the optional CPU tensor adapter, install `.[torch]`. For validated
+safetensors connector consumption, install `.[runtime]`. These modules are
+isolated so importing the base package never imports PyTorch.
 
 ## Layout
 
@@ -37,6 +37,7 @@ imports PyTorch.
 - `src/north_dflash_training/torch_layout.py` — optional PyTorch `[1, Q]` query tensors, dense `[Q, C + Q]` boolean visibility oracle, and FlexAttention block-mask construction
 - `src/north_dflash_training/weights.py` — exponential CE weights
 - `src/north_dflash_training/cache.py` — feature-cache estimator
+- `src/north_dflash_training/feature_stream.py` — exact-runtime connector validation and fail-closed bounded in-memory feature ring
 - `src/north_dflash_training/candidate.py` — config/tokenizer-audited North derivation
 - `src/north_dflash_training/teacher.py` — config-fingerprinted, checkpoint-unverified AutoGPTQ feature manifest, without extraction
 - `src/north_dflash_training/checkpoint_identity.py` — explicit incremental config/index/shard hashing and verification without tensor loading
@@ -60,4 +61,4 @@ Sampling and weighting follow the [DFlash paper](https://arxiv.org/abs/2602.0603
 
 The base layout relation remains dependency-free and CPU-testable. With the optional PyTorch extra, the adapter materializes a single packed batch's `[1, Q]` query tensors and a dense `[Q, C + Q]` oracle: frozen context keys `0..C-1` precede query keys, each query sees context through its clean absolute anchor, and query-query attention is bidirectional only within its sampled block. The optional training contract accepts detached selected clean states in declared layer order, concatenates them to `[B, C, L*H]`, hands frozen embedding/LM-head modules directly to a draft-only adapter, and computes a weighted CE mean over the unshifted masked-future labels. The optional local-reference adapter additionally proves a tiny random Qwen3/DFlash eager CPU forward, exact mask construction, draft-only gradients, and bounded optimization; it is not a North forward. It supports no cache or FlexAttention. The same visibility rule can construct a FlexAttention `BlockMask` when the installed build exposes `create_block_mask`; this is construction parity only, not an attention-kernel or GPU validation.
 
-`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. Exact AutoGPTQ, W4A16, and FP8 checkpoint identities are retained under `configs/`. Isolated runtime gates prove one-layer DFlash construction and exact five-feature extraction for all three targets, but this repository does not yet consume their features online. Bounded connector consumption, mask/embedding/LM-head training handoff, the eight-feature extraction gate, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
+`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. Exact AutoGPTQ, W4A16, and FP8 checkpoint identities are retained under `configs/`. Isolated runtime gates prove one-layer DFlash construction plus exact five- and eight-feature extraction for all three targets. `feature_stream.py` validates a transient connector artifact against its exact runtime/token/layer contract, clones one bounded request into `TeacherFeatureBundle`, and applies item/token/byte backpressure without writing a corpus. Live server orchestration, transient-file lifecycle, mask/embedding/LM-head training handoff, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
