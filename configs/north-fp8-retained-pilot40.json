@@ -1,6 +1,6 @@
 {
   "experiment": "north-fp8-retained-pilot40",
-  "status": "configured",
+  "status": "pass",
   "scope": "Forty cumulative CRUXEval calibration updates in five bounded teacher/trainer phases; ten source cases remain untouched for acceptance measurements.",
   "teacher": {
     "target_name": "NorthFP8Target",
@@ -99,6 +99,22 @@
     "cruxeval-o: sample_777",
     "cruxeval-o: sample_781"
   ],
+  "result": {
+    "completed_cumulative_updates": 40,
+    "mean_loss_first_eight": 10.61873459815979,
+    "mean_loss_final_eight": 7.462823510169983,
+    "mean_loss_all_updates": 8.443542492389678,
+    "minimum_loss": 4.617099285125732,
+    "maximum_loss": 14.113337516784668,
+    "final_draft_fc_sha256": "81a739b4306bd978df213b7f38424aeed94a8c4c2fb8ee4bac8ed212274bc681",
+    "final_checkpoint_manifest_sha256": "24a6216f626925decbeffd9059bfccfde57d3d3ad2b838c4ee5d43e8aa834a42",
+    "final_checkpoint_round_trip_resume": true,
+    "shared_vocabulary_unchanged": true,
+    "all_training_connectors_released": true,
+    "all_generation_connectors_released": true,
+    "final_evidence": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T040000Z-fp8-retained-pilot40-chunk04-step40",
+    "interpretation": "Construction telemetry only; the lower final-chunk mean is not a held-out quality or acceptance claim."
+  },
   "retention": {
     "checkpoint_after_each_chunk": true,
     "teacher_features_retained": false,
