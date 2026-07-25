@@ -40,11 +40,12 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 - The retained INT4 checkpoint identity manifest hashes its config, weight index, and seven declared shards. The INT4 configuration identifies a 4-bit integer AutoGPTQ/AutoRound checkpoint with group size 32 and expert-only requirements.
 - Both geometry candidates remain review candidates: 8 full draft layers with 5 target features, and 6 layers with 5 sliding plus 1 full layer and 8 target features. No North geometry is selected.
 - A random one-layer North-shaped smoke artifact passed an isolated exact-INT4 TP=2 construction/load gate. Both ranks proved block 24 → extractor entry 25, a 2048-wide auxiliary tensor, a 2048-wide draft `fc` input, and actual one-layer context-KV construction with 4 global KV heads × 128 dimensions. The runtime stopped before generation and grants no serving or training evidence.
+- One bounded exact-INT4 extraction request proved the five-feature mapping `[1, 12, 24, 35, 46]` → `[2, 13, 25, 36, 47]`, shape `[23, 5, 2048]`, BF16 dtype, tokenizer order, and byte-identical values across both TP ranks and the connector artifact. This is deterministic Phase 2 feature evidence, not a training dataset.
 
 ### Not yet evidence
 
 - FP8 checkpoint file identity has not been established by a retained config/index/shard manifest. Its local config identifies a compressed float-quantized checkpoint, but config inspection is not checkpoint identity.
-- Training-capable North hidden-state extraction, all candidate-layer mappings, tensor-parallel feature sequencing, multi-layer target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The one-feature construction/load smoke does not satisfy the deterministic Phase 2 trace gate.
+- A bounded online/ring-buffer consumer, the eight-feature candidate mapping, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The five-feature trace satisfies only the feature indexing/order/TP portion of the deterministic Phase 2 gate.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
 This plan does not turn CPU construction parity, a random probe, or a static loader reading into serving evidence.
