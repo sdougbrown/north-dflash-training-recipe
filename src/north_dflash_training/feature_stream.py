@@ -222,11 +222,23 @@ class BoundedFeatureRing:
         self._tokens += batch.token_count
         self._bytes += batch.feature_bytes
 
-    def popleft(self) -> StreamedTeacherBatch:
+    def peekleft(self) -> StreamedTeacherBatch:
+        """Return the oldest batch without acknowledging or removing it."""
         if not self._items:
             raise IndexError("bounded feature ring is empty")
-        batch = self._items.popleft()
+        return self._items[0]
+
+    def ackleft(self, request_id: str) -> StreamedTeacherBatch:
+        """Acknowledge and remove exactly the oldest successfully consumed batch."""
+        batch = self.peekleft()
+        if request_id != batch.request_id:
+            raise ValueError("acknowledgement request_id does not match ring head")
+        self._items.popleft()
         self._request_ids.remove(batch.request_id)
         self._tokens -= batch.token_count
         self._bytes -= batch.feature_bytes
         return batch
+
+    def popleft(self) -> StreamedTeacherBatch:
+        """Compatibility shorthand for immediate, non-transactional consumption."""
+        return self.ackleft(self.peekleft().request_id)
