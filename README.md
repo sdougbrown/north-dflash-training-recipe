@@ -21,7 +21,7 @@ an explicit acknowledgement. It cannot overwrite an output and fails closed if
 the local vLLM loader contract is not provable. It never trains, evaluates
 acceptance, or starts a GPU/server. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md).
 
-The random smoke artifact has passed a construction/load-only TP=2 gate against the exact AutoGPTQ target on a pinned ROCm 7.2.4 image. Subsequent bounded traces proved both the five-feature and eight-feature mappings for AutoGPTQ on Rocky, Cohere W4A16/MARLIN on Bitey, and Cohere FP8/TRITON on Bitey. Each produced ordered 2048-wide BF16 features with exact tokenizer alignment, but target feature tensors differ. Teacher extraction must disable prefix caching; W4A16/MARLIN also exhibits small bounded numerical nondeterminism across repeated forwards. A fail-closed in-memory consumer now validates and owns one connector result at a time with bounded queue backpressure, but live server orchestration and training handoff remain missing. No training was attempted. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+The random smoke artifact has passed a construction/load-only TP=2 gate against the exact AutoGPTQ target on a pinned ROCm 7.2.4 image. Subsequent bounded traces proved both the five-feature and eight-feature mappings for AutoGPTQ on Rocky, Cohere W4A16/MARLIN on Bitey, and Cohere FP8/TRITON on Bitey. Each produced ordered 2048-wide BF16 features with exact tokenizer alignment, but target feature tensors differ. Teacher extraction must disable prefix caching. The stock W4A16/MARLIN runtime exhibited small route-order nondeterminism; the pinned PR #48032 runtime now produces byte-identical repeated features. A fail-closed in-memory consumer now validates and owns one connector result at a time with bounded queue backpressure, but live server orchestration and training handoff remain missing. No training was attempted. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) and [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
@@ -50,6 +50,7 @@ isolated so importing the base package never imports PyTorch.
 - `configs/north-dflash-candidate.json` — generated review artifact
 - `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the AutoGPTQ teacher
 - `configs/north-w4a16-teacher-checkpoint-identity.json` — independently verified config/index/four-shard identity for Cohere's W4A16 teacher
+- `configs/north-w4a16-deterministic-marlin-runtime.json` — pinned PR #48032 Marlin runtime and byte-identical eight-feature trace identity
 - `configs/north-fp8-teacher-checkpoint-identity.json` — independently verified config/index/seven-shard identity for Cohere's FP8 teacher
 - `configs/north-shared-embedding-identity.json` — byte-identical three-target tied embedding/output identity and audited mask row
 - `docs/RUNTIME_PROBE.md` — artifact constraints, runtime identity rules, passed Rocky smoke evidence, and stop criteria

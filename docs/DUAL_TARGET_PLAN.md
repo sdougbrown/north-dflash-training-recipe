@@ -46,7 +46,7 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 - `configs/north-w4a16-teacher-checkpoint-identity.json` hashes Cohere's four-shard expert-only NVFP4 W4A16 checkpoint. Rocky and Bitey independently produced manifest digest `64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a` over 19,354,738,299 bytes.
 - Bitey loaded that exact checkpoint with vLLM 0.25.1 and the narrow reviewed Cohere overlay, selecting MARLIN NVFP4 MoE. All 18,432 filtered expert-bias placeholders, totaling 22,020,096 BF16 values, were exactly zero. A bounded request produced aligned BF16 `[23, 5, 2048]` features for the five-feature mapping.
 - `configs/north-fp8-teacher-checkpoint-identity.json` independently pins Cohere's seven-shard FP8 checkpoint on Rocky and Bitey: 32,029,761,935 bytes and manifest digest `35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6`. Bitey loaded it with the TRITON FP8 MoE backend and produced an aligned BF16 `[23, 5, 2048]` trace. All three target traces share token IDs but are pairwise different, with divergence increasing by depth despite high cosine similarity.
-- The eight-feature mapping `[1, 7, 14, 20, 27, 33, 40, 46]` → `[2, 8, 15, 21, 28, 34, 41, 47]` passed for AutoGPTQ, W4A16, and FP8 with BF16 `[23, 8, 2048]` artifacts. AutoGPTQ TP ranks were byte-identical. FP8 repeated byte-identically with prefix caching disabled. W4A16/MARLIN exhibited bounded numerical execution noise, accumulating from an exact first selected layer to repeat RMSE 0.04082/max 1.5 across the full trace.
+- The eight-feature mapping `[1, 7, 14, 20, 27, 33, 40, 46]` → `[2, 8, 15, 21, 28, 34, 41, 47]` passed for AutoGPTQ, W4A16, and FP8 with BF16 `[23, 8, 2048]` artifacts. AutoGPTQ TP ranks and no-prefix FP8 repeats were byte-identical. Stock W4A16/MARLIN exhibited bounded route-order noise (RMSE 0.04082/max 1.5); the pinned PR #48032 backport made both small and radix alignment deterministic and produced byte-identical exact-teacher repeats.
 
 ### Not yet evidence
 
@@ -71,7 +71,7 @@ Record the shared prompt-set identity once. Responses generated from it are targ
 
 For `NorthINT4Target`, reverify the retained `configs/north-int4-teacher-checkpoint-identity.json` immediately before extraction and serving evaluation. It must still match the exact config, index, and all declared shards.
 
-For `NorthW4A16Target`, reverify `configs/north-w4a16-teacher-checkpoint-identity.json` before extraction and evaluation. Preserve the exact backend and platform in each run because Bitey's CUDA MARLIN path and Rocky's ROCm fallback are distinct deployed verifier distributions.
+For `NorthW4A16Target`, reverify `configs/north-w4a16-teacher-checkpoint-identity.json` and require the image/extension identity in `configs/north-w4a16-deterministic-marlin-runtime.json` before extraction, training, or evaluation. Bitey's patched CUDA MARLIN path and Rocky's ROCm fallback are distinct verifier distributions.
 
 For `NorthFP8Target`, reverify `configs/north-fp8-teacher-checkpoint-identity.json` using the same bounded, no-tensor-loading method. Record the deployed model location, serving image/revision, quantization configuration, tokenizer identity, and tensor-parallel topology for all targets.
 
@@ -96,7 +96,7 @@ For the active target only, use that exact verifier to generate the response tok
 
 Do not materialize a full hidden-state corpus. Feed detached states directly to training or retain only a bounded ring buffer sized and documented for the active job. Store response tokens and prompt/result metadata by target, but discard feature tensors after their bounded online lifetime. Disable vLLM prefix caching for teacher extraction: a controlled FP8 repeat showed that the cache-hit path can emit a different feature artifact instead of recomputing the exact requested states.
 
-**Gate:** the run ledger must join every batch to the active verifier identity, target-specific response set, target-layer order, disabled-prefix-cache setting, and online/ring-buffer policy. Presence of mixed-target features, unknown target identity, enabled prefix caching, or an unbounded feature cache stops the run. Byte repeatability is required for deterministic backends; W4A16/MARLIN instead requires a predeclared tolerance envelope and retained repeat statistics.
+**Gate:** the run ledger must join every batch to the active verifier identity, target-specific response set, target-layer order, disabled-prefix-cache setting, and online/ring-buffer policy. Presence of mixed-target features, unknown target identity, enabled prefix caching, or an unbounded feature cache stops the run. Byte repeatability is required for all three pinned runtimes. W4A16/MARLIN additionally requires the PR #48032 runtime identity; tolerance-only stock-Marlin runs are diagnostics.
 
 ### 4. Run a 100–1,000-example pilot for each candidate
 

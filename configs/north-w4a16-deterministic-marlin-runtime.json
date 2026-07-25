@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "teacher_family": "NorthW4A16Target",
+  "checkpoint_manifest_sha256": "64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a",
+  "vllm_base_revision": "752a3a504485790a2e8491cacbb35c137339ad34",
+  "upstream_pr": "https://github.com/vllm-project/vllm/pull/48032",
+  "pr_backport_head": "6bd64215f",
+  "narrow_build_adapter": "668f3e25a",
+  "runtime_image": "local/vllm-openai-cuda:v0.25.1-north-dflash-w4a16-deterministic-marlin-r2",
+  "runtime_image_id": "sha256:9d5f9b9cc92d8eb251bc48b2aeb63a6aa40e8756c632e6e65096d0c5dc755199",
+  "extension_sha256": "736f2470377ba4a4d88ade3bda051847820b341e5c542d8808c639c9fd7dc649",
+  "backend": "MARLIN",
+  "prefix_caching": false,
+  "eight_feature_trace": {
+    "target_blocks": [1, 7, 14, 20, 27, 33, 40, 46],
+    "extractor_entries": [2, 8, 15, 21, 28, 34, 41, 47],
+    "shape": [23, 8, 2048],
+    "dtype": "torch.bfloat16",
+    "safetensors_sha256": "e29bf21982c33ab5608a4efd900d84f858df6fb5e34b17add6728868961128cc",
+    "hidden_states_sha256": "9485be0628552c56404df2b748d49660eda3387f1cbb6c46f791e756ad54de16",
+    "token_ids_sha256": "90e25f8dc11d3a181d93ef9f4db99d3db91871f125bd73e3cd55a5cb7d0d1a42",
+    "repeat_count": 2,
+    "byte_identical": true
+  },
+  "alignment_gates": {
+    "stable_small_routes": 184,
+    "stable_small_repeats": 100,
+    "radix_routes": 2056,
+    "radix_repeats": 20
+  },
+  "evidence": {
+    "kernel_gate": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T183000Z-deterministic-marlin-align-kernel-gate-r2",
+    "exact_teacher_repeat": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T183800Z-w4a16-eight-deterministic-marlin-final"
+  }
+}

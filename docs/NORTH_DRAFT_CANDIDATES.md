@@ -47,10 +47,12 @@ local DFlash model and BF16/FP16 weights/KV values.
    by one full-attention layer. This is recorded as reference geometry, not yet
    selected for North.
 4. Exact AutoGPTQ, W4A16, and FP8 teachers now expose detached five- and
-   eight-feature traces with verified numbering. Candidate measurement remains
-   blocked on the North embedding/LM-head/mask handoff, bounded online consumer,
-   and production attention integration. Teacher extraction must disable prefix
-   caching; W4A16/MARLIN repeatability is tolerance-based rather than byte-exact.
+   eight-feature traces with verified numbering. The tied North embedding,
+   mask row, output projection, and bounded in-memory consumer contracts pass.
+   Candidate measurement remains blocked on live orchestration, real-draft
+   optimization integration, and production attention. Teacher extraction must
+   disable prefix caching; W4A16 must use the pinned deterministic PR #48032
+   MARLIN runtime rather than the stock tolerance-only path.
 
 The source-controlled generated review artifact contains the same machine
 readable estimates. It is config-only; no North weights, GPU, package, or data
