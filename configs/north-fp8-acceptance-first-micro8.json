@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "pilot_kind": "retained_micro_pilot",
+  "scope": "first retained multi-example checkpoint; not geometry selection or quality evidence",
+  "teacher": {
+    "runtime_config": "configs/north-fp8-triton-runtime.json",
+    "target_name": "NorthFP8Target",
+    "checkpoint_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+    "runtime_image_id": "sha256:d89ae2666c80ea7d64c903670cd5b8a643f03e878c65aa21b534bc6792dba637",
+    "backend": "TRITON_FP8_MOE",
+    "platform": "Bitey NVIDIA GB10 CUDA 13",
+    "tensor_parallel_size": 1,
+    "prefix_caching": false
+  },
+  "response_source": {
+    "kind": "local_cruxeval_calibration_subset",
+    "path": "/home/douglasbrown/Code/model-evals/tests.yaml",
+    "sha256": "57a329c953b698c6e5c68b7ae84198801984d572436066a39c648d7548ec7dd4",
+    "case_ids": [
+      "cruxeval-o: sample_6",
+      "cruxeval-o: sample_25",
+      "cruxeval-o: sample_27",
+      "cruxeval-o: sample_30",
+      "cruxeval-o: sample_32",
+      "cruxeval-o: sample_89",
+      "cruxeval-o: sample_94",
+      "cruxeval-o: sample_95"
+    ],
+    "calibration_only": true,
+    "held_out_quality_claim": false,
+    "prompt_template": "CRUXEval-O function-output question plus an instruction to reason before the final literal"
+  },
+  "teacher_generation": {
+    "temperature": 0.0,
+    "seed": 20260725,
+    "max_completion_tokens": 512,
+    "return_token_ids": true,
+    "enable_thinking": true,
+    "minimum_response_tokens": 16
+  },
+  "feature_stream": {
+    "target_block_ids": [1, 12, 24, 35, 46],
+    "extractor_entry_ids": [2, 13, 25, 36, 47],
+    "shape_per_request": "[prompt_tokens + response_tokens, 5, 2048]",
+    "dtype": "torch.bfloat16",
+    "max_items": 8,
+    "max_tokens": 8192,
+    "max_bytes": 167772160,
+    "transient_release": "after matching optimizer acknowledgement"
+  },
+  "draft": {
+    "candidate": "acceptance_first_qwen3_coder_shaped",
+    "candidate_selected_globally": false,
+    "architecture": "DFlashDraftModel",
+    "dtype": "torch.bfloat16",
+    "num_hidden_layers": 8,
+    "layer_types": [
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention"
+    ],
+    "target_feature_count": 5,
+    "estimated_parameters": 473995264,
+    "shared_embedding_and_output_saved_in_checkpoint": false
+  },
+  "optimization": {
+    "optimizer": "torch.optim.AdamW",
+    "learning_rate": 0.00002,
+    "weight_decay": 0.01,
+    "block_size": 16,
+    "loss_gamma": 7.0,
+    "max_anchors_per_example": 1,
+    "max_gradient_norm": 1.0,
+    "steps": 8,
+    "checkpoint_after_step": 8,
+    "save_optimizer_state": true
+  },
+  "acceptance": {
+    "required": [
+      "eight response-token ledger entries with exact prompt/response token IDs",
+      "eight finite optimizer updates",
+      "all transient feature and lock files released",
+      "frozen tied vocabulary hash unchanged",
+      "draft-only safe checkpoint and trusted-local optimizer state retained",
+      "checkpoint manifest hashes and round-trip reload pass"
+    ],
+    "prohibited_claims": [
+      "draft geometry selected",
+      "quality improved",
+      "acceptance improved",
+      "production attention validated",
+      "deployment ready"
+    ]
+  }
+}

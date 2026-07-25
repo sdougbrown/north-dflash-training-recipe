@@ -49,10 +49,14 @@ local DFlash model and BF16/FP16 weights/KV values.
 4. Exact AutoGPTQ, W4A16, and FP8 teachers now expose detached five- and
    eight-feature traces with verified numbering. The tied North embedding,
    mask row, output projection, and bounded in-memory consumer contracts pass.
-   Candidate measurement remains blocked on live orchestration, real-draft
-   optimization integration, and production attention. Teacher extraction must
-   disable prefix caching; W4A16 must use the pinned deterministic PR #48032
-   MARLIN runtime rather than the stock tolerance-only path.
+   One-step real-draft optimization now passes for every verifier family and a
+   draft-only save/resume boundary exists. The first retained FP8 micro-pilot is
+   configured for the eight-full-layer candidate, but has not run and does not
+   select it. Candidate comparison remains blocked on retained measurements and
+   the six-layer candidate remains blocked on real sliding-window attention.
+   Teacher extraction must disable prefix caching; W4A16 must use the pinned
+   deterministic PR #48032 MARLIN runtime rather than the stock tolerance-only
+   path.
 
 The source-controlled generated review artifact contains the same machine
 readable estimates. It is config-only; no North weights, GPU, package, or data
