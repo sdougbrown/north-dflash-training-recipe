@@ -39,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--previous-checkpoint", type=Path, required=True)
     parser.add_argument("--previous-manifest-sha256", required=True)
     parser.add_argument("--expected-previous-steps", type=int, required=True)
+    parser.add_argument("--max-anchors", type=int, default=1)
     parser.add_argument("--server", default="http://127.0.0.1:8093")
     parser.add_argument("--served-model", default="north-fp8-retained-pilot")
     return parser.parse_args()
@@ -60,6 +61,8 @@ def main() -> None:
     args = parse_args()
     if args.expected_previous_steps < 1:
         raise RuntimeError("continuation requires a retained prior step")
+    if args.max_anchors < 1 or args.max_anchors > 64:
+        raise RuntimeError("max_anchors must be between 1 and 64")
     case_ids = tuple(args.case_id)
     cases = load_selected_cases(args.source, case_ids)
     final_steps = args.expected_previous_steps + len(cases)
@@ -189,6 +192,7 @@ def main() -> None:
         "previous_steps": args.expected_previous_steps,
         "final_steps": final_steps,
         "response_ledger_sha256": current_ledger_sha256,
+        "max_anchors_per_example": args.max_anchors,
         "request_ids": [handoff.request_id for handoff in handoffs],
         "generation_connector_releases": generation_releases,
     }, indent=2, sort_keys=True) + "\n")
@@ -224,7 +228,7 @@ def main() -> None:
             optimizer=optimizer,
             prompt_length=prompt_length,
             block_size=16,
-            max_anchors=1,
+            max_anchors=args.max_anchors,
             mask_token_id=1,
             seed=20260725 + step_number,
             loss_gamma=7.0,
@@ -338,6 +342,7 @@ def main() -> None:
             "steps": step_results,
             "current_step_count": len(step_results),
             "cumulative_step_count": final_steps,
+            "max_anchors_per_example": args.max_anchors,
         },
         "connector_releases": release_results,
         "generation_connector_releases": generation_releases,
