@@ -44,11 +44,11 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 - A random one-layer North-shaped smoke artifact passed an isolated exact-INT4 TP=2 construction/load gate. Both ranks proved block 24 → extractor entry 25, a 2048-wide auxiliary tensor, a 2048-wide draft `fc` input, and actual one-layer context-KV construction with 4 global KV heads × 128 dimensions. The runtime stopped before generation and grants no serving or training evidence.
 - One bounded exact-INT4 extraction request proved the five-feature mapping `[1, 12, 24, 35, 46]` → `[2, 13, 25, 36, 47]`, shape `[23, 5, 2048]`, BF16 dtype, tokenizer order, and byte-identical values across both TP ranks and the connector artifact. This is deterministic Phase 2 feature evidence, not a training dataset.
 - `configs/north-w4a16-teacher-checkpoint-identity.json` hashes Cohere's four-shard expert-only NVFP4 W4A16 checkpoint. Rocky and Bitey independently produced manifest digest `64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a` over 19,354,738,299 bytes.
-- Bitey loaded that exact checkpoint with vLLM 0.25.1 and the narrow reviewed Cohere overlay, selecting MARLIN NVFP4 MoE. All 18,432 filtered expert-bias placeholders, totaling 22,020,096 BF16 values, were exactly zero. A bounded request produced aligned BF16 `[23, 5, 2048]` features for the five-feature mapping. Its feature values differ measurably from AutoGPTQ while retaining high cosine similarity, confirming that W4A16 needs its own matched branch.
+- Bitey loaded that exact checkpoint with vLLM 0.25.1 and the narrow reviewed Cohere overlay, selecting MARLIN NVFP4 MoE. All 18,432 filtered expert-bias placeholders, totaling 22,020,096 BF16 values, were exactly zero. A bounded request produced aligned BF16 `[23, 5, 2048]` features for the five-feature mapping.
+- `configs/north-fp8-teacher-checkpoint-identity.json` independently pins Cohere's seven-shard FP8 checkpoint on Rocky and Bitey: 32,029,761,935 bytes and manifest digest `35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6`. Bitey loaded it with the TRITON FP8 MoE backend and produced an aligned BF16 `[23, 5, 2048]` trace. All three target traces share token IDs but are pairwise different, with divergence increasing by depth despite high cosine similarity.
 
 ### Not yet evidence
 
-- FP8 checkpoint file identity has not been established by a retained config/index/shard manifest. Its local config identifies a compressed float-quantized checkpoint, but config inspection is not checkpoint identity.
 - A bounded online/ring-buffer consumer, the eight-feature candidate mapping, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The five-feature trace satisfies only the feature indexing/order/TP portion of the deterministic Phase 2 gate.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
@@ -72,7 +72,7 @@ For `NorthINT4Target`, reverify the retained `configs/north-int4-teacher-checkpo
 
 For `NorthW4A16Target`, reverify `configs/north-w4a16-teacher-checkpoint-identity.json` before extraction and evaluation. Preserve the exact backend and platform in each run because Bitey's CUDA MARLIN path and Rocky's ROCm fallback are distinct deployed verifier distributions.
 
-For `NorthFP8Target`, create and independently reverify an equivalent config/index/shard identity manifest using the same bounded, no-tensor-loading identity method. Record the deployed model location, serving image/revision, quantization configuration, tokenizer identity, and tensor-parallel topology for all targets.
+For `NorthFP8Target`, reverify `configs/north-fp8-teacher-checkpoint-identity.json` using the same bounded, no-tensor-loading method. Record the deployed model location, serving image/revision, quantization configuration, tokenizer identity, and tensor-parallel topology for all targets.
 
 **Gate:** hash or identity mismatch, missing declared files, incompatible tokenizer, changed serving revision, or an unrecorded quantization change stops that branch. Do not replace the target with BF16 to continue.
 
