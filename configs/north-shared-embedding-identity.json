@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "tensor_key": "model.embed_tokens.weight",
+  "shape": [
+    262144,
+    2048
+  ],
+  "dtype": "torch.bfloat16",
+  "tensor_bytes": 1073741824,
+  "sha256": "d9497bf06b9a4efa9463207860a7fca3e7c051f4a857ca010ec4863086586d19",
+  "mask_token_id": 1,
+  "mask_row_sha256": "e51148421a6bbe5c40ada87fb21474525c9265bd560882ad047fb43d90e684bd",
+  "separate_lm_head_tensor_present": false,
+  "tied_output_projection": true,
+  "checkpoint_manifests": {
+    "NorthINT4Target": "fca065d1f7df51b17763e5555363c36100d72c638cf318f71ef6c7f9b5319cae",
+    "NorthW4A16Target": "64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a",
+    "NorthFP8Target": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6"
+  },
+  "evidence": {
+    "three_target_tensor_hash": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T161500Z-three-target-shared-embedding-identity",
+    "exact_mask_and_logits_handoff": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T163000Z-exact-tied-embedding-handoff",
+    "tp2_runtime_object_identity": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T162800Z-north-dflash-tied-output-contract-legacy"
+  }
+}

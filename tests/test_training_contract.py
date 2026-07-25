@@ -90,6 +90,28 @@ class TrainingContractTests(unittest.TestCase):
         self.assertTrue(all(parameter.grad is None for parameter in lm_head.parameters()))
         self.assertEqual(list(step.parameters()), list(adapter.parameters()))
 
+    def test_north_tied_embedding_handoff_uses_mask_row_and_output_weight(self):
+        embedding = nn.Embedding(12, 4)
+        with torch.no_grad():
+            embedding.weight.copy_(torch.arange(48).reshape(12, 4))
+        shared = FrozenSharedWeights.handoff_tied_embedding(
+            embedding,
+            mask_token_id=1,
+        )
+        self.assertIs(shared.embedding, embedding)
+        self.assertIsNone(shared.lm_head)
+        self.assertTrue(shared.tied_output_embedding)
+        self.assertEqual(shared.mask_token_id, 1)
+        mask_ids = torch.tensor([[1, 1]], dtype=torch.int64)
+        self.assertTrue(
+            torch.equal(shared.embed(mask_ids), embedding.weight[1].reshape(1, 1, 4).expand(1, 2, 4))
+        )
+        hidden = torch.randn(1, 2, 4)
+        self.assertTrue(torch.equal(shared.logits(hidden), torch.nn.functional.linear(hidden, embedding.weight)))
+        self.assertTrue(all(not parameter.requires_grad for parameter in embedding.parameters()))
+        with self.assertRaisesRegex(ValueError, "mask_token_id"):
+            FrozenSharedWeights.handoff_tied_embedding(nn.Embedding(3, 4), mask_token_id=3)
+
     def test_weighted_ce_ignores_anchor_and_uses_exponential_weights(self):
         logits = torch.tensor([[[100.0, -100.0], [0.0, 2.0], [1.0, 0.0]]])
         labels = torch.tensor([[-100, 1, 0]], dtype=torch.int64)

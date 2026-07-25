@@ -98,25 +98,62 @@ def concatenate_target_features(
 
 @dataclass(frozen=True)
 class FrozenSharedWeights:
-    """Direct references to the target embedding and LM head, frozen in place.
+    """Frozen direct references for target input and output vocabulary weights.
 
-    No weights are copied into the draft.  Keeping the original module objects
-    makes tied embedding/LM-head storage remain tied when the teacher exposes
-    it that way.  These modules are intentionally not registered as children of
-    :class:`DFlashTrainingStep`, so an optimizer over that step sees draft
-    parameters only.
+    North/Cohere2 has no separate ``lm_head`` tensor: its target logits processor
+    projects with ``model.embed_tokens`` because word embeddings are tied. The
+    tied handoff therefore uses the exact embedding parameter for both lookup
+    and ``F.linear`` output projection. No vocabulary weights are copied or
+    registered under :class:`DFlashTrainingStep`.
     """
 
     embedding: nn.Module
-    lm_head: nn.Module
+    lm_head: nn.Module | None
+    tied_output_embedding: bool = False
+    mask_token_id: int | None = None
+
+    @staticmethod
+    def _freeze(module: nn.Module) -> None:
+        for parameter in module.parameters():
+            parameter.requires_grad_(False)
+        module.eval()
 
     @classmethod
     def handoff(cls, embedding: nn.Module, lm_head: nn.Module) -> "FrozenSharedWeights":
-        for module in (embedding, lm_head):
-            for parameter in module.parameters():
-                parameter.requires_grad_(False)
-            module.eval()
+        cls._freeze(embedding)
+        cls._freeze(lm_head)
         return cls(embedding=embedding, lm_head=lm_head)
+
+    @classmethod
+    def handoff_tied_embedding(
+        cls,
+        embedding: nn.Module,
+        *,
+        mask_token_id: int,
+    ) -> "FrozenSharedWeights":
+        weight = getattr(embedding, "weight", None)
+        if not isinstance(weight, torch.Tensor) or weight.ndim != 2:
+            raise ValueError("tied output handoff requires a rank-two embedding weight")
+        if (
+            isinstance(mask_token_id, bool)
+            or not isinstance(mask_token_id, int)
+            or mask_token_id < 0
+            or mask_token_id >= weight.shape[0]
+        ):
+            raise ValueError("mask_token_id must index the shared embedding vocabulary")
+        cls._freeze(embedding)
+        probe_ids = torch.tensor([[mask_token_id]], dtype=torch.int64, device=weight.device)
+        probe = embedding(probe_ids)
+        if probe.shape != (1, 1, weight.shape[1]) or not torch.equal(
+            probe[0, 0], weight[mask_token_id]
+        ):
+            raise ValueError("mask token lookup must use the tied shared embedding row")
+        return cls(
+            embedding=embedding,
+            lm_head=None,
+            tied_output_embedding=True,
+            mask_token_id=mask_token_id,
+        )
 
     def embed(self, input_ids: torch.Tensor) -> torch.Tensor:
         embeddings = self.embedding(input_ids)
@@ -125,9 +162,17 @@ class FrozenSharedWeights:
         return embeddings
 
     def logits(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        logits = self.lm_head(hidden_states)
+        if self.tied_output_embedding:
+            weight = getattr(self.embedding, "weight", None)
+            if not isinstance(weight, torch.Tensor) or weight.ndim != 2:
+                raise ValueError("tied shared embedding weight is unavailable")
+            logits = F.linear(hidden_states, weight)
+        else:
+            if self.lm_head is None:
+                raise ValueError("untied output handoff requires an LM head")
+            logits = self.lm_head(hidden_states)
         if logits.ndim != 3 or logits.shape[:2] != hidden_states.shape[:2]:
-            raise ValueError("shared LM head must return [B, Q, V]")
+            raise ValueError("shared output projection must return [B, Q, V]")
         return logits
 
 

@@ -50,7 +50,7 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 
 ### Not yet evidence
 
-- Live server-to-ring orchestration, transient connector-file lifecycle, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. A fail-closed in-memory consumer and five/eight-feature traces satisfy the identity/indexing/order/rank-completeness/bounded-memory portions of the deterministic Phase 2/3 boundary only.
+- Live server-to-ring orchestration, transient connector-file lifecycle, multi-layer draft target-feature/KV integration, real-draft optimization handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. A fail-closed in-memory consumer, five/eight-feature traces, and exact tied embedding/mask/output gates satisfy the identity/indexing/order/rank-completeness/bounded-memory/vocabulary portions of the deterministic Phase 2/3 boundary only.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
 This plan does not turn CPU construction parity, a random probe, or a static loader reading into serving evidence.
@@ -84,8 +84,8 @@ Implement and test one target at a time. For each target branch:
 1. Prove the mapping between zero-based transformer block IDs and exported hidden-state entries, including whether an embedding output occupies index zero. The current five-feature reference spread and the eight-feature candidate spread are not proof of Cohere2Moe indexing.
 2. Prove tensor-parallel completeness: every requested layer is present exactly once in the assembled feature sequence, has the expected width, preserves token order and request boundaries, and has no missing or duplicate shard/rank contribution.
 3. Prove selected-state order, clean positions `0..C-1`, and concatenated feature width match the draft `fc` input for the selected candidate.
-4. Prove the embedding and LM-head handoff uses the exact target modules with intended tied-weight behavior, remains frozen during draft training, and produces the expected target vocabulary logits.
-5. Prove the tokenizer-audited mask token and its embedding handoff. North's reviewed candidate uses `<MASK_TOKEN>` ID `1`. Explicitly decide and record whether masked slots use the frozen shared token embedding or a separately trained draft mask embedding; do not introduce a fallback ID or silently substitute either behavior.
+4. Preserve the proven tied vocabulary handoff: all three targets use the byte-identical `model.embed_tokens.weight` for both input and output, with no separate LM-head tensor. Runtime target/draft objects must remain identical and frozen during draft-only optimization.
+5. Preserve the audited `<MASK_TOKEN>` ID `1` behavior: masked slots use frozen shared embedding row 1. A separately trained mask embedding is not part of the current candidate and requires a new reviewed experiment.
 6. Prove target-feature/KV alignment and the serving attention path before claiming that the CPU eager visibility oracle, FlexAttention predicate, or reference Qwen adapter applies to North.
 
 **Gate:** capture a small deterministic trace containing token IDs, positions, target layer IDs, extractor IDs, feature shapes/dtypes, TP assembly evidence, embedding/LM-head identity, mask embedding evidence, and logits. Any mismatch stops that target; no training may begin.
