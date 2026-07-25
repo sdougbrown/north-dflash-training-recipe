@@ -128,6 +128,29 @@ def wait_for_stable_artifact(path: Path, *, timeout: float = 60) -> None:
     raise TimeoutError(f"connector artifact did not stabilize: {path}")
 
 
+def release_generation_connector(path: Path) -> dict:
+    """Release an automatic generation-side connector after token-ledger durability.
+
+    These prompt-only states are not training inputs and therefore do not wait
+    for an optimizer acknowledgement. Their exact token response has already
+    been persisted before this function is called.
+    """
+    wait_for_stable_artifact(path)
+    lock = Path(f"{path}.lock")
+    if not lock.is_file() or path.is_symlink() or lock.is_symlink():
+        raise RuntimeError("generation connector feature/lock pair is unsafe")
+    result = {
+        "feature_path": str(path),
+        "size_bytes": path.stat().st_size,
+        "sha256": sha256_file(path),
+        "lock_path": str(lock),
+        "release_reason": "prompt-only generation states; exact response token IDs retained",
+    }
+    path.unlink()
+    lock.unlink()
+    return result
+
+
 def require_teacher_stopped(marker: Path, server: str) -> None:
     deadline = time.monotonic() + 900
     while not marker.is_file():
@@ -233,10 +256,12 @@ def main() -> None:
     handoffs: list[OwnedConnectorHandoff] = []
     examples: list[ResponseExample] = []
     prompt_lengths: list[int] = []
+    generation_releases: list[dict] = []
 
     for index, case in enumerate(cases):
         request_id = f"fp8-micro8-{index:02d}-{case['description'].split()[-1]}"
         variables = case["vars"]
+        generation_feature_path = run / f"generation-{index:02d}.safetensors"
         generation = post_json(
             f"{args.server}/v1/chat/completions",
             {
@@ -249,6 +274,10 @@ def main() -> None:
                 "seed": 20260725 + index,
                 "return_token_ids": True,
                 "chat_template_kwargs": {"enable_thinking": True},
+                "kv_transfer_params": {
+                    "hidden_states_path": f"/features/{generation_feature_path.name}",
+                    "include_output_tokens": False,
+                },
             },
         )
         prompt_ids = generation.get("prompt_token_ids")
@@ -262,6 +291,7 @@ def main() -> None:
             raise RuntimeError(f"teacher sequence exceeds bounded pilot limits: {request_id}")
         response_record = responses_dir / f"{index:02d}.json"
         response_record.write_text(json.dumps(generation, indent=2, sort_keys=True) + "\n")
+        generation_releases.append(release_generation_connector(generation_feature_path))
 
         example = ResponseExample(
             prompt_tokens=tuple(prompt_ids),
@@ -450,6 +480,7 @@ def main() -> None:
             "loss_last": step_results[-1]["loss"],
         },
         "connector_releases": release_results,
+        "generation_connector_releases": generation_releases,
         "shared_vocabulary": {
             "sha256_before": embedding_hash_before,
             "sha256_after_steps": embedding_hash_after_steps,

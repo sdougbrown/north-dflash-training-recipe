@@ -50,9 +50,10 @@ local DFlash model and BF16/FP16 weights/KV values.
    eight-feature traces with verified numbering. The tied North embedding,
    mask row, output projection, and bounded in-memory consumer contracts pass.
    One-step real-draft optimization now passes for every verifier family and a
-   draft-only save/resume boundary exists. The first retained FP8 micro-pilot is
-   configured for the eight-full-layer candidate, but has not run and does not
-   select it. Candidate comparison remains blocked on retained measurements and
+   draft-only save/resume boundary exists. The first retained eight-example FP8
+   micro-pilot passed for the eight-full-layer candidate, but is too small and
+   unscored to select it. Candidate comparison remains blocked on held-out
+   acceptance/memory measurements and
    the six-layer candidate remains blocked on real sliding-window attention.
    Teacher extraction must disable prefix caching; W4A16 must use the pinned
    deterministic PR #48032 MARLIN runtime rather than the stock tolerance-only

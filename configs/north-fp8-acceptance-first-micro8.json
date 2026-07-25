@@ -80,6 +80,31 @@
     "checkpoint_after_step": 8,
     "save_optimizer_state": true
   },
+  "result": {
+    "status": "pass",
+    "recipe_commit_used": "e16c246",
+    "completed_steps": 8,
+    "bounded_ring_tokens": 5609,
+    "bounded_ring_feature_bytes": 114872320,
+    "losses": [
+      14.113337516784668,
+      12.498982429504395,
+      10.24790096282959,
+      10.068319320678711,
+      8.394139289855957,
+      9.099677085876465,
+      9.436491012573242,
+      11.091029167175293
+    ],
+    "draft_fc_sha256_before": "1c65bffb1903db357180a2162eec61a731c10b852f528abeb87d22c0443d4036",
+    "draft_fc_sha256_after": "c8e1db0f1b0e7bd367afbd48c2e5c76fd5b561d01b3b0dbd13e3734934838ebf",
+    "checkpoint_manifest_sha256": "ca76d48349c9e1642c35c6e5c4391a523254e3b3349b44dbd5dde5effa769d93",
+    "checkpoint_round_trip_resume": true,
+    "shared_embedding_unchanged": true,
+    "all_training_connectors_released": true,
+    "automatic_generation_connectors_released_postflight": 8,
+    "evidence": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T000000Z-fp8-acceptance-first-micro8"
+  },
   "acceptance": {
     "required": [
       "eight response-token ledger entries with exact prompt/response token IDs",

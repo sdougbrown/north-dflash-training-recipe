@@ -1037,7 +1037,9 @@ def save_checkpoint(
     (staging / MANIFEST_FILENAME).write_bytes(manifest_bytes)
     (staging / MANIFEST_SHA256_FILENAME).write_text(manifest.sha256 + "\n", encoding="ascii")
     for name in _ALLOWED_FILENAMES:
+        os.chmod(staging / name, 0o644)
         _fsync_file(staging / name)
+    os.chmod(staging, 0o755)
     _fsync_directory(staging)
     _publish_no_replace(staging, final)
     _fsync_directory(final.parent)
