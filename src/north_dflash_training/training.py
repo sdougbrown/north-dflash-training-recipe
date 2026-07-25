@@ -37,8 +37,9 @@ class TeacherFeatureBundle:
     ``hidden_states[i]`` belongs exactly to ``selected_layer_ids[i]``; layer
     IDs are intentionally not sorted or re-derived.  Each state has shape
     ``[B, C, H]``.  ``clean_positions`` must be the contiguous absolute clean
-    prefix ``0..C-1`` used by the packed layout's context keys.  Extraction of
-    these states from North's exact AutoGPTQ teacher remains unimplemented.
+    prefix ``0..C-1`` used by the packed layout's context keys. Exact connector
+    extraction is implemented separately in :mod:`feature_stream`; this class
+    remains independent of any teacher loader or serving runtime.
     """
 
     selected_layer_ids: tuple[int, ...]

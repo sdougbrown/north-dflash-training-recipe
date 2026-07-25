@@ -28,8 +28,24 @@
     "radix_routes": 2056,
     "radix_repeats": 20
   },
+  "one_optimizer_step": {
+    "recipe_commit": "01a7c19",
+    "dflash_reference_commit": "94e4abc",
+    "draft_geometry": "one full-attention layer, eight teacher features",
+    "draft_dtype": "torch.bfloat16",
+    "block_size": 8,
+    "query_count": 8,
+    "active_label_count": 7,
+    "loss": 16.031368255615234,
+    "gradient_norm_before_clipping": 119.5,
+    "updated_parameter_tensors": 14,
+    "frozen_embedding_unchanged": true,
+    "ring_empty_after_acknowledgement": true,
+    "checkpoint_written": false
+  },
   "evidence": {
     "kernel_gate": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T183000Z-deterministic-marlin-align-kernel-gate-r2",
-    "exact_teacher_repeat": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T183800Z-w4a16-eight-deterministic-marlin-final"
+    "exact_teacher_repeat": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T183800Z-w4a16-eight-deterministic-marlin-final",
+    "live_ring_one_optimizer_step": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260725T194000Z-w4a16-live-ring-one-optimizer-step-final"
   }
 }
