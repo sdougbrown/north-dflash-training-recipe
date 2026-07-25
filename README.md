@@ -50,6 +50,7 @@ isolated so importing the base package never imports PyTorch.
 - `scripts/run_fp8_acceptance_first_micro8.py` — exact FP8 eight-example retained micro-pilot driver with teacher/trainer state separation
 - `scripts/run_fp8_continuation_chunk.py` — cumulative one-to-eight-example FP8 continuation with parent-root verification and checkpoint round-trip
 - `scripts/export_retained_draft.py` — verified draft-only checkpoint to vLLM-loadable HF artifact conversion without tied target I/O
+- `scripts/measure_dflash_acceptance.py` — exact held-out speculative counters, per-position acceptance, and sequential throughput evidence
 - `schemas/response-example.schema.json` — interchange schema
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
