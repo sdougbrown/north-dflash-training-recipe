@@ -47,6 +47,7 @@ isolated so importing the base package never imports PyTorch.
 - `src/north_dflash_training/transformers_draft_adapter.py` — optional, capability-gated eager-attention adapter for the real local `dflash.DFlashDraftModel`; it converts the audited bool `[Q, C + Q]` rule to a Qwen3 eager additive `[B, 1, Q, C + Q]` mask and is intentionally no-cache/non-FlexAttention
 - `src/north_dflash_training/cli.py` — synthetic CPU dry-run and guarded random runtime-probe entrypoints
 - `src/north_dflash_training/runtime_probe.py` — North-shaped config, static vLLM loader contract, deterministic random-only HF artifact writer
+- `scripts/run_fp8_acceptance_first_micro8.py` — exact FP8 eight-example retained micro-pilot driver with teacher/trainer state separation
 - `schemas/response-example.schema.json` — interchange schema
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
