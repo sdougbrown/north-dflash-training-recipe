@@ -11,6 +11,16 @@ PYTHONPATH=src python3 -m north_dflash_training.cli dry-run
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
+## Guarded pre-GPU runtime probe
+
+`runtime-probe-config` prints, and `runtime-probe-generate` can guardedly write,
+a **random, non-production** Hugging Face `DFlashDraftModel` for proving only
+vLLM target auxiliary-state plumbing/runtime loading. The default is a
+North-shaped one-layer/block-size-two smoke; the 8-layer full candidate requires
+an explicit acknowledgement. It cannot overwrite an output and fails closed if
+the local vLLM loader contract is not provable. It never trains, evaluates
+acceptance, or starts a GPU/server. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md).
+
 The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
 For the optional CPU tensor adapter, install `.[torch]`. It lives in
@@ -30,11 +40,13 @@ imports PyTorch.
 - `src/north_dflash_training/checkpoint_identity.py` — explicit incremental config/index/shard hashing and verification without tensor loading
 - `src/north_dflash_training/training.py` — optional-PyTorch typed teacher-feature, frozen shared-weight, adapter, and weighted-loss contract; includes a synthetic CPU-only adapter
 - `src/north_dflash_training/transformers_draft_adapter.py` — optional, capability-gated eager-attention adapter for the real local `dflash.DFlashDraftModel`; it converts the audited bool `[Q, C + Q]` rule to a Qwen3 eager additive `[B, 1, Q, C + Q]` mask and is intentionally no-cache/non-FlexAttention
-- `src/north_dflash_training/cli.py` — synthetic CPU dry-run
+- `src/north_dflash_training/cli.py` — synthetic CPU dry-run and guarded random runtime-probe entrypoints
+- `src/north_dflash_training/runtime_probe.py` — North-shaped config, static vLLM loader contract, deterministic random-only HF artifact writer
 - `schemas/response-example.schema.json` — interchange schema
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
 - `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the exact deployed teacher
+- `docs/RUNTIME_PROBE.md` — artifact constraints, loader evidence, and future Bitey probe stop criteria
 - `IMPLEMENTATION_STATUS.md` — implemented primitives and integration gaps
 - `tests/` — dependency-free unit tests
 

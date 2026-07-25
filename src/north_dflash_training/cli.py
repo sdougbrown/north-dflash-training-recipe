@@ -9,6 +9,13 @@ from pathlib import Path
 from .cache import estimate_feature_cache, format_bytes
 from .candidate import DEFAULT_TARGET_CONFIG, DEFAULT_TOKENIZER_CONFIG, derive_north_candidate
 from .layout import build_training_batch_layout
+from .runtime_probe import (
+    DEFAULT_IDENTITY_MANIFEST,
+    DEFAULT_SEED,
+    DEFAULT_VLLM_SOURCE,
+    build_probe_config,
+    generate_runtime_probe,
+)
 from .sampling import sample_anchor_blocks
 from .schema import ResponseExample
 from .weights import exponential_loss_weights
@@ -37,6 +44,27 @@ def build_parser() -> argparse.ArgumentParser:
     dry.add_argument("--tokenizer-config", type=Path, default=DEFAULT_TOKENIZER_CONFIG)
     dry.add_argument("--tokenizer-json", type=Path, default=None, help="override tokenizer.json used by the mask audit")
     dry.add_argument("--show-blocks", type=int, default=2)
+
+    probe_config = sub.add_parser(
+        "runtime-probe-config",
+        help="print a random-only North-shaped DFlash runtime-probe config; writes no weights",
+    )
+    probe_config.add_argument("--geometry", choices=("smoke", "full"), default="smoke")
+
+    probe = sub.add_parser(
+        "runtime-probe-generate",
+        help="guardedly write a random non-production DFlash checkpoint for runtime plumbing only",
+    )
+    probe.add_argument("--output", type=Path, required=True, help="must not already exist")
+    probe.add_argument("--geometry", choices=("smoke", "full"), default="smoke")
+    probe.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    probe.add_argument(
+        "--confirm-full-random-nonproduction",
+        action="store_true",
+        help="required only for the full 8-layer candidate; it remains random and non-production",
+    )
+    probe.add_argument("--vllm-source", type=Path, default=DEFAULT_VLLM_SOURCE)
+    probe.add_argument("--identity-manifest", type=Path, default=DEFAULT_IDENTITY_MANIFEST)
     return parser
 
 
@@ -126,9 +154,24 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, object]:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        result = run_dry_run(args)
-    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        raise SystemExit(f"dry-run failed: {exc}") from exc
+        if args.command == "dry-run":
+            result = run_dry_run(args)
+        elif args.command == "runtime-probe-config":
+            result = {
+                "status": "config only; no model weights, GPU, server, or target checkpoint touched",
+                "config": build_probe_config(args.geometry),
+            }
+        else:
+            result = generate_runtime_probe(
+                args.output,
+                geometry=args.geometry,
+                seed=args.seed,
+                confirm_full_random_nonproduction=args.confirm_full_random_nonproduction,
+                vllm_source=args.vllm_source,
+                identity_manifest=args.identity_manifest,
+            )
+    except (OSError, KeyError, TypeError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"{args.command} failed: {exc}") from exc
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
