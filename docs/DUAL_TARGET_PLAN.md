@@ -46,10 +46,11 @@ Each artifact manifest must include its verifier-target label; source checkpoint
 - `configs/north-w4a16-teacher-checkpoint-identity.json` hashes Cohere's four-shard expert-only NVFP4 W4A16 checkpoint. Rocky and Bitey independently produced manifest digest `64ee97e76305fb94c28eb93f0babf91fbb335062b14c5018cf8f86130504a27a` over 19,354,738,299 bytes.
 - Bitey loaded that exact checkpoint with vLLM 0.25.1 and the narrow reviewed Cohere overlay, selecting MARLIN NVFP4 MoE. All 18,432 filtered expert-bias placeholders, totaling 22,020,096 BF16 values, were exactly zero. A bounded request produced aligned BF16 `[23, 5, 2048]` features for the five-feature mapping.
 - `configs/north-fp8-teacher-checkpoint-identity.json` independently pins Cohere's seven-shard FP8 checkpoint on Rocky and Bitey: 32,029,761,935 bytes and manifest digest `35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6`. Bitey loaded it with the TRITON FP8 MoE backend and produced an aligned BF16 `[23, 5, 2048]` trace. All three target traces share token IDs but are pairwise different, with divergence increasing by depth despite high cosine similarity.
+- The eight-feature mapping `[1, 7, 14, 20, 27, 33, 40, 46]` → `[2, 8, 15, 21, 28, 34, 41, 47]` passed for AutoGPTQ, W4A16, and FP8 with BF16 `[23, 8, 2048]` artifacts. AutoGPTQ TP ranks were byte-identical. FP8 repeated byte-identically with prefix caching disabled. W4A16/MARLIN exhibited bounded numerical execution noise, accumulating from an exact first selected layer to repeat RMSE 0.04082/max 1.5 across the full trace.
 
 ### Not yet evidence
 
-- A bounded online/ring-buffer consumer, the eight-feature candidate mapping, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The five-feature trace satisfies only the feature indexing/order/TP portion of the deterministic Phase 2 gate.
+- A bounded online/ring-buffer consumer, multi-layer draft target-feature/KV integration, mask/embedding/LM-head training handoff, optimizer/checkpoint policy, quality, acceptance, latency, memory, and throughput are unverified. The five- and eight-feature traces satisfy only the feature indexing/order/rank-completeness portion of the deterministic Phase 2 gate.
 - The vLLM DFlash model obtains a **draft-specific** quantization configuration and passes it to its dense draft projections, including attention projections, dense MLP projections, and the auxiliary-feature `fc` projection. This makes an FP8 draft-weight export a plausible implementation path, not a validated one. ROCm compatibility and performance for an FP8 draft remain unverified.
 
 This plan does not turn CPU construction parity, a random probe, or a static loader reading into serving evidence.
@@ -93,9 +94,9 @@ Implement and test one target at a time. For each target branch:
 
 For the active target only, use that exact verifier to generate the response tokens and perform teacher forwards that supply the selected hidden states. AutoGPTQ, W4A16, and FP8 examples and features feed only their corresponding branches.
 
-Do not materialize a full hidden-state corpus. Feed detached states directly to training or retain only a bounded ring buffer sized and documented for the active job. Store response tokens and prompt/result metadata by target, but discard feature tensors after their bounded online lifetime.
+Do not materialize a full hidden-state corpus. Feed detached states directly to training or retain only a bounded ring buffer sized and documented for the active job. Store response tokens and prompt/result metadata by target, but discard feature tensors after their bounded online lifetime. Disable vLLM prefix caching for teacher extraction: a controlled FP8 repeat showed that the cache-hit path can emit a different feature artifact instead of recomputing the exact requested states.
 
-**Gate:** the run ledger must join every batch to the active verifier identity, target-specific response set, target-layer order, and online/ring-buffer policy. Presence of mixed-target features, unknown target identity, or an unbounded feature cache stops the run.
+**Gate:** the run ledger must join every batch to the active verifier identity, target-specific response set, target-layer order, disabled-prefix-cache setting, and online/ring-buffer policy. Presence of mixed-target features, unknown target identity, enabled prefix caching, or an unbounded feature cache stops the run. Byte repeatability is required for deterministic backends; W4A16/MARLIN instead requires a predeclared tolerance envelope and retained repeat statistics.
 
 ### 4. Run a 100–1,000-example pilot for each candidate
 

@@ -1,9 +1,10 @@
 # North draft geometry candidates — no selection
 
 These are two review candidates derived from the published geometry supplied
-for this investigation. They are **not** a North configuration decision and
-neither has been instantiated against North. Both preserve the read-only North
-shape used by this scaffold: hidden size 2048, 32 query heads, 4 KV heads,
+for this investigation. They are **not** a North configuration decision. Their
+five- and eight-feature teacher mappings have been extracted, but neither full
+draft geometry has been instantiated or trained against North. Both preserve
+the read-only North shape used by this scaffold: hidden size 2048, 32 query heads, 4 KV heads,
 head dimension 128, dense draft MLP width 6144, SiLU, and block size 16.
 North's target expert width 768 is not the dense draft width.
 
@@ -45,10 +46,11 @@ local DFlash model and BF16/FP16 weights/KV values.
 3. The upstream Qwen3.6 draft order is five sliding-attention layers followed
    by one full-attention layer. This is recorded as reference geometry, not yet
    selected for North.
-4. Before either North candidate can be measured, the exact int4 AutoGPTQ
-   teacher must expose detached hidden states with verified numbering, and the
-   North embedding/LM-head handoff must be proven. Neither action is performed
-   here.
+4. Exact AutoGPTQ, W4A16, and FP8 teachers now expose detached five- and
+   eight-feature traces with verified numbering. Candidate measurement remains
+   blocked on the North embedding/LM-head/mask handoff, bounded online consumer,
+   and production attention integration. Teacher extraction must disable prefix
+   caching; W4A16/MARLIN repeatability is tolerance-based rather than byte-exact.
 
 The source-controlled generated review artifact contains the same machine
 readable estimates. It is config-only; no North weights, GPU, package, or data
