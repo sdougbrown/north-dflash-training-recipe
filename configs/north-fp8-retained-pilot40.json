@@ -1,0 +1,115 @@
+{
+  "experiment": "north-fp8-retained-pilot40",
+  "status": "configured",
+  "scope": "Forty cumulative CRUXEval calibration updates in five bounded teacher/trainer phases; ten source cases remain untouched for acceptance measurements.",
+  "teacher": {
+    "target_name": "NorthFP8Target",
+    "checkpoint_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+    "runtime_image_id": "sha256:d89ae2666c80ea7d64c903670cd5b8a643f03e878c65aa21b534bc6792dba637",
+    "backend": "TRITON_FP8_MOE",
+    "tensor_parallel_size": 1,
+    "prefix_caching_enabled": false,
+    "selected_extractor_entry_ids": [2, 13, 25, 36, 47]
+  },
+  "draft": {
+    "candidate": "acceptance_first_qwen3_coder_shaped",
+    "dtype": "bfloat16",
+    "num_layers": 8,
+    "target_block_ids": [1, 12, 24, 35, 46],
+    "attention_pattern": ["full", "full", "full", "full", "full", "full", "full", "full"],
+    "block_size": 16,
+    "mask_token_id": 1
+  },
+  "optimization": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.00002,
+    "weight_decay": 0.01,
+    "loss_gamma": 7.0,
+    "max_gradient_norm": 1.0,
+    "queries_per_example": 16,
+    "updates_per_example": 1,
+    "total_cumulative_updates": 40
+  },
+  "source": {
+    "path": "/home/douglasbrown/Code/model-evals/tests.yaml",
+    "sha256": "57a329c953b698c6e5c68b7ae84198801984d572436066a39c648d7548ec7dd4",
+    "role": "calibration only"
+  },
+  "completed_initial_cases": [
+    "cruxeval-o: sample_6",
+    "cruxeval-o: sample_25",
+    "cruxeval-o: sample_27",
+    "cruxeval-o: sample_30",
+    "cruxeval-o: sample_32",
+    "cruxeval-o: sample_89",
+    "cruxeval-o: sample_94",
+    "cruxeval-o: sample_95"
+  ],
+  "continuation_chunks": [
+    [
+      "cruxeval-o: sample_99",
+      "cruxeval-o: sample_104",
+      "cruxeval-o: sample_114",
+      "cruxeval-o: sample_142",
+      "cruxeval-o: sample_159",
+      "cruxeval-o: sample_163",
+      "cruxeval-o: sample_203",
+      "cruxeval-o: sample_220"
+    ],
+    [
+      "cruxeval-o: sample_223",
+      "cruxeval-o: sample_225",
+      "cruxeval-o: sample_228",
+      "cruxeval-o: sample_238",
+      "cruxeval-o: sample_250",
+      "cruxeval-o: sample_270",
+      "cruxeval-o: sample_281",
+      "cruxeval-o: sample_284"
+    ],
+    [
+      "cruxeval-o: sample_344",
+      "cruxeval-o: sample_348",
+      "cruxeval-o: sample_352",
+      "cruxeval-o: sample_367",
+      "cruxeval-o: sample_389",
+      "cruxeval-o: sample_429",
+      "cruxeval-o: sample_432",
+      "cruxeval-o: sample_459"
+    ],
+    [
+      "cruxeval-o: sample_517",
+      "cruxeval-o: sample_558",
+      "cruxeval-o: sample_574",
+      "cruxeval-o: sample_603",
+      "cruxeval-o: sample_604",
+      "cruxeval-o: sample_616",
+      "cruxeval-o: sample_618",
+      "cruxeval-o: sample_654"
+    ]
+  ],
+  "acceptance_holdout_cases": [
+    "cruxeval-o: sample_665",
+    "cruxeval-o: sample_692",
+    "cruxeval-o: sample_714",
+    "cruxeval-o: sample_718",
+    "cruxeval-o: sample_733",
+    "cruxeval-o: sample_754",
+    "cruxeval-o: sample_758",
+    "cruxeval-o: sample_759",
+    "cruxeval-o: sample_777",
+    "cruxeval-o: sample_781"
+  ],
+  "retention": {
+    "checkpoint_after_each_chunk": true,
+    "teacher_features_retained": false,
+    "shared_vocabulary_retained": false,
+    "exact_request_response_release_ledgers": true,
+    "external_manifest_digest_required": true
+  },
+  "claims_excluded": [
+    "held-out quality improvement",
+    "draft geometry selection",
+    "production attention correctness",
+    "deployment readiness"
+  ]
+}
