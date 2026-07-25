@@ -21,6 +21,8 @@ an explicit acknowledgement. It cannot overwrite an output and fails closed if
 the local vLLM loader contract is not provable. It never trains, evaluates
 acceptance, or starts a GPU/server. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md).
 
+The random smoke artifact has now passed a construction/load-only TP=2 gate against the exact INT4 target on a pinned ROCm 7.2.4 image. Both ranks asserted auxiliary entry 25 at width 2048 and one-layer context-KV geometry with 4 global KV heads × 128 dimensions. No generation or training was attempted; this result clears runtime plumbing only. See [docs/RUNTIME_PROBE.md](docs/RUNTIME_PROBE.md) for the retained evidence and remaining boundary.
+
 The dry-run creates synthetic token sequences, samples bounded DFlash blocks, builds and validates a CPU-only sparse layout relation, derives a review-only North candidate from local JSON config/tokenizer audit, and compares disk/offline feature storage with online and ring-buffer estimates.
 
 For the optional CPU tensor adapter, install `.[torch]`. It lives in
@@ -46,7 +48,7 @@ imports PyTorch.
 - `schemas/teacher-feature-manifest.schema.json` — config-level teacher identity manifest
 - `configs/north-dflash-candidate.json` — generated review artifact
 - `configs/north-int4-teacher-checkpoint-identity.json` — verified config/index/seven-shard identity for the exact deployed teacher
-- `docs/RUNTIME_PROBE.md` — artifact constraints, loader evidence, and future Bitey probe stop criteria
+- `docs/RUNTIME_PROBE.md` — artifact constraints, runtime identity rules, passed Rocky smoke evidence, and stop criteria
 - `IMPLEMENTATION_STATUS.md` — implemented primitives and integration gaps
 - `tests/` — dependency-free unit tests
 
@@ -56,4 +58,4 @@ Sampling and weighting follow the [DFlash paper](https://arxiv.org/abs/2602.0603
 
 The base layout relation remains dependency-free and CPU-testable. With the optional PyTorch extra, the adapter materializes a single packed batch's `[1, Q]` query tensors and a dense `[Q, C + Q]` oracle: frozen context keys `0..C-1` precede query keys, each query sees context through its clean absolute anchor, and query-query attention is bidirectional only within its sampled block. The optional training contract accepts detached selected clean states in declared layer order, concatenates them to `[B, C, L*H]`, hands frozen embedding/LM-head modules directly to a draft-only adapter, and computes a weighted CE mean over the unshifted masked-future labels. The optional local-reference adapter additionally proves a tiny random Qwen3/DFlash eager CPU forward, exact mask construction, draft-only gradients, and bounded optimization; it is not a North forward. It supports no cache or FlexAttention. The same visibility rule can construct a FlexAttention `BlockMask` when the installed build exposes `create_block_mask`; this is construction parity only, not an attention-kernel or GPU validation.
 
-`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. The exact installed North checkpoint has now been explicitly hashed and reverified; its retained manifest is `configs/north-int4-teacher-checkpoint-identity.json`. Exact AutoGPTQ hidden-state extraction, runtime North model integration, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.
+`checkpoint_identity.py` is also dependency-free and intentionally absent from the dry-run path. The exact installed North checkpoint has now been explicitly hashed and reverified; its retained manifest is `configs/north-int4-teacher-checkpoint-identity.json`. The isolated runtime smoke proves one target auxiliary boundary and one-layer context-KV construction, but it does not expose online teacher features to training. Exact AutoGPTQ training extraction, mask/embedding/LM-head training handoff, multi-feature integration, and actual training remain missing. See `IMPLEMENTATION_STATUS.md` before treating any future work as training or deployment.

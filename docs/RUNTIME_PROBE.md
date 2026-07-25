@@ -71,15 +71,18 @@ state contains only `fc`, `hidden_norm`, `norm`, and `layers` tensors—no
 embedding or LM head. Tiny CPU fixture tests save and reopen the safetensors
 file and verify those names before a North-shaped artifact is allowed.
 
-## Bitey runtime-probe criteria (do not launch from this repository)
+## Runtime-probe criteria (do not launch from this repository)
 
-A future Bitey operator may use this artifact only in an isolated, stopped
-service/test harness after all of these criteria are recorded:
+An operator may use this artifact only in an isolated, stopped service/test
+harness after all of these criteria are recorded:
 
 1. The deployed target is the exact identity linked in the artifact manifest;
    do not substitute a BF16/dequantized target or a different tokenizer.
-2. vLLM source/revision matches the manifest's loader evidence. Re-run the
-   static check if the image or checkout changed.
+2. Pin the deployed runtime exactly. A full source build may use the manifest's
+   vLLM revision. A composite image must instead record its immutable image ID,
+   base image ID, overlay revision, relevant installed source-file hashes, and a
+   repeated loader-contract check. Do not label a composite as a full build of
+   the inspected checkout.
 3. The DFlash config parses as `DFlashDraftModel`; vLLM selects the DFlash
    loader; and loading consumes only the artifact's draft tensors while target
    embedding/LM-head are shared (not duplicated).
@@ -94,3 +97,29 @@ service/test harness after all of these criteria are recorded:
 
 Failure at any point is a runtime-integration finding, not permission to add
 weights, train, alter the target, or run an acceptance experiment.
+
+## Passed INT4 smoke gate
+
+The exact INT4 target and the random one-layer smoke artifact passed these six
+criteria on Rocky at TP=2. The runtime used resident weights, ROCm 7.2.4 on the
+host and in the container, `NCCL_PROTO=Simple`, and a 210 W cap per R9700. It
+stopped after health readiness without a generation request.
+
+Fail-closed assertions on both ranks recorded:
+
+- target block 24 mapped to auxiliary entry 25;
+- one auxiliary tensor had shape `[2048, 2048]` during warmup;
+- the draft `fc` input width was 2048;
+- one draft KV layer had 4 global/2 local KV heads and head dimension 128; and
+- actual context K and V tensors had per-rank shape `[1, 2048, 2, 128]`.
+
+The exact image ID, component source hashes, target/draft hashes, logs, kernel
+record, and outcome are retained at:
+
+```text
+/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260725T135001Z-north-int4-dflash-contract-final/
+```
+
+This result clears the construction/load prerequisite only. It does not provide
+a training feature API, validate additional target layers, or permit acceptance,
+quality, throughput, or deployment claims.
