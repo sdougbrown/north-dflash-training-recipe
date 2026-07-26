@@ -1,0 +1,196 @@
+{
+  "best_runtime_config": {
+    "attention_backend": "TRITON_ATTN",
+    "draft_tensor_parallel_size": "1 or 2; no material difference",
+    "image_id": "sha256:631642edb1979b6dabdad0a58f4da0cad8ef17b584ebca7809e9303cb3e7a8d8",
+    "num_speculative_tokens": 3
+  },
+  "claims_excluded": [
+    "production DFlash speedup",
+    "bitwise output parity",
+    "long-context speedup",
+    "response quality",
+    "retained draft-only checkpoint compliance"
+  ],
+  "decisions": [
+    "Do not deploy the 5K DFlash checkpoint over compiled target-only serving.",
+    "Do not use the legacy tied-output image for standardized checkpoints.",
+    "Use k=3 and TRITON_ATTN for further acceptance work.",
+    "Disable DFlash dynamically at concurrency greater than one until runtime scaling improves.",
+    "Freeze the clean compiled Rocky target before Rocky-native response regeneration."
+  ],
+  "draft_model_sha256": "51b59eec29aad7ab352e4a7541ccab8a54158d7fbdc28e232fee53f3678fdd30",
+  "evidence": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260726T173100Z-fp8-dflash-compiled-runtime-gate",
+  "experiment": "north-fp8-speculators-rocky-compiled-runtime-v1",
+  "interpretation": "Clean compiled target-only is 99.06 tok/s on the mixed holdout and 101.12/185.16/312.69 tok/s at c1/c2/c4. Best DFlash is 92.87 tok/s on the mixed holdout and 81.18/113.76/201.62 on fixed-prompt c1/c2/c4. Reducing proposals from 7 to 3 recovers substantial DFlash throughput, but no production speedup exists. ROCM_ATTN is materially worse than TRITON_ATTN for this DFlash path. Draft TP=1 is neutral.",
+  "outcome_sha256": "03ccdbd7ec5e7afe53c3e6ea572c1908e609217821d7f5042172b8a558a612e4",
+  "output_parity": {
+    "dflash_k3_root_sha256": "40ef00bf112f4fa5fe1812a3d92b3f2e069a054580d440f5472349fe3c0909d2",
+    "exact_full_requests": 7,
+    "median_common_prefix_tokens": 48.0,
+    "minimum_common_prefix_tokens": 1,
+    "target_root_sha256": "2138f7bca73fb31c9f9eb9aacfe4b4156380a75fcd26a6e6acbbac717c1ec894"
+  },
+  "status": "no_production_speedup",
+  "target": {
+    "heldout_output_tokens_per_s": 99.0621459919676,
+    "image_id": "sha256:631642edb1979b6dabdad0a58f4da0cad8ef17b584ebca7809e9303cb3e7a8d8",
+    "load": [
+      {
+        "aggregate_output_tokens_per_s": 101.12,
+        "completion_tokens": 2048,
+        "concurrency": 1,
+        "per_request_decode_tokens_per_s_p50": 102.61,
+        "prompt_tokens_per_request": 140,
+        "request_latency_s_p50": 2.531,
+        "request_latency_s_p95": 2.539,
+        "requests": 8,
+        "ttft_s_p50": 0.045,
+        "ttft_s_p95": 0.046,
+        "wall_s": 20.254
+      },
+      {
+        "aggregate_output_tokens_per_s": 185.16,
+        "completion_tokens": 2048,
+        "concurrency": 2,
+        "per_request_decode_tokens_per_s_p50": 94.74,
+        "prompt_tokens_per_request": 140,
+        "request_latency_s_p50": 2.763,
+        "request_latency_s_p95": 2.769,
+        "requests": 8,
+        "ttft_s_p50": 0.072,
+        "ttft_s_p95": 0.097,
+        "wall_s": 11.061
+      },
+      {
+        "aggregate_output_tokens_per_s": 312.69,
+        "completion_tokens": 2048,
+        "concurrency": 4,
+        "per_request_decode_tokens_per_s_p50": 80.33,
+        "prompt_tokens_per_request": 140,
+        "request_latency_s_p50": 3.271,
+        "request_latency_s_p95": 3.278,
+        "requests": 8,
+        "ttft_s_p50": 0.097,
+        "ttft_s_p95": 0.105,
+        "wall_s": 6.55
+      }
+    ],
+    "output_root_sha256": "2138f7bca73fb31c9f9eb9aacfe4b4156380a75fcd26a6e6acbbac717c1ec894"
+  },
+  "target_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+  "variants": {
+    "clean_k3_rocm_attn_draft_tp2": {
+      "accepted_by_position": [
+        3870.0,
+        1734.0,
+        756.0
+      ],
+      "heldout_output_tokens_per_s": 72.99453356704501,
+      "heldout_ratio_to_target": 0.7368559689082824,
+      "load": [
+        {
+          "concurrency": 1,
+          "output_tokens_per_s": 61.29,
+          "ratio_to_target": 0.6061115506329113
+        },
+        {
+          "concurrency": 2,
+          "output_tokens_per_s": 94.02,
+          "ratio_to_target": 0.5077770576798445
+        },
+        {
+          "concurrency": 4,
+          "output_tokens_per_s": 164.98,
+          "ratio_to_target": 0.5276152099523489
+        }
+      ],
+      "mean_emitted_tokens": 1.9935947508201843
+    },
+    "clean_k3_triton_draft_tp1": {
+      "accepted_by_position": [
+        3832.0,
+        1756.0,
+        754.0
+      ],
+      "heldout_output_tokens_per_s": 92.84209261760415,
+      "heldout_ratio_to_target": 0.9372105932889058,
+      "load": [
+        {
+          "concurrency": 1,
+          "output_tokens_per_s": 81.15,
+          "ratio_to_target": 0.8025118670886077
+        },
+        {
+          "concurrency": 2,
+          "output_tokens_per_s": 115.26,
+          "ratio_to_target": 0.6224886584575503
+        },
+        {
+          "concurrency": 4,
+          "output_tokens_per_s": 199.58,
+          "ratio_to_target": 0.6382679330966773
+        }
+      ],
+      "mean_emitted_tokens": 1.99047321568015
+    },
+    "clean_k3_triton_draft_tp2": {
+      "accepted_by_position": [
+        3832.0,
+        1755.0,
+        754.0
+      ],
+      "heldout_output_tokens_per_s": 92.86520609211352,
+      "heldout_ratio_to_target": 0.9374439162628624,
+      "load": [
+        {
+          "concurrency": 1,
+          "output_tokens_per_s": 81.18,
+          "ratio_to_target": 0.8028085443037974
+        },
+        {
+          "concurrency": 2,
+          "output_tokens_per_s": 113.76,
+          "ratio_to_target": 0.6143875567077123
+        },
+        {
+          "concurrency": 4,
+          "output_tokens_per_s": 201.62,
+          "ratio_to_target": 0.6447919664843775
+        }
+      ],
+      "mean_emitted_tokens": 1.990162398500937
+    },
+    "legacy_k7_triton_draft_tp2": {
+      "accepted_by_position": [
+        3786.0,
+        1608.0,
+        634.0,
+        262.0,
+        120.0,
+        56.0,
+        30.0
+      ],
+      "heldout_output_tokens_per_s": 72.63904504723637,
+      "heldout_ratio_to_target": 0.7332674284395804,
+      "load": [
+        {
+          "concurrency": 1,
+          "output_tokens_per_s": 61.28,
+          "ratio_to_target": 0.6060126582278481
+        },
+        {
+          "concurrency": 2,
+          "output_tokens_per_s": 98.85,
+          "ratio_to_target": 0.5338626053143227
+        },
+        {
+          "concurrency": 4,
+          "output_tokens_per_s": 176.47,
+          "ratio_to_target": 0.5643608685918962
+        }
+      ],
+      "mean_emitted_tokens": 2.031438551921245
+    }
+  }
+}
