@@ -56,17 +56,20 @@ def metric_value(text: str, name: str) -> float:
     return float(match.group(1))
 
 
-def position_values(text: str) -> list[float]:
-    values = []
-    for position in range(15):
-        pattern = re.compile(
-            rf'^vllm:spec_decode_num_accepted_tokens_per_pos_total\{{[^\n]*position="{position}"[^\n]*\}}\s+([0-9.eE+-]+)$',
-            re.MULTILINE,
+def position_values(text: str) -> dict[int, float]:
+    """Return all exported per-position counters for the configured draft width."""
+    pattern = re.compile(
+        r'^vllm:spec_decode_num_accepted_tokens_per_pos_total\{[^\n]*position="([0-9]+)"[^\n]*\}\s+([0-9.eE+-]+)$',
+        re.MULTILINE,
+    )
+    values = {int(match.group(1)): float(match.group(2)) for match in pattern.finditer(text)}
+    if not values:
+        raise RuntimeError("no per-position acceptance metrics were exported")
+    expected = set(range(max(values) + 1))
+    if set(values) != expected:
+        raise RuntimeError(
+            f"per-position acceptance metrics are not contiguous: {sorted(values)}"
         )
-        match = pattern.search(text)
-        if match is None:
-            raise RuntimeError(f"position metric is missing: {position}")
-        values.append(float(match.group(1)))
     return values
 
 
@@ -127,8 +130,13 @@ def main() -> None:
     (run / "metrics-after.txt").write_text(after_text)
     after = {name: metric_value(after_text, name) for name in METRICS}
     positions_after = position_values(after_text)
+    if positions_after.keys() != positions_before.keys():
+        raise RuntimeError("per-position metric set changed during acceptance measurement")
     delta = {name: after[name] - before[name] for name in METRICS}
-    position_delta = [a - b for a, b in zip(positions_after, positions_before, strict=True)]
+    position_delta = [
+        positions_after[position] - positions_before[position]
+        for position in positions_before
+    ]
     drafts = delta[METRICS[0]]
     draft_tokens = delta[METRICS[1]]
     accepted = delta[METRICS[2]]
