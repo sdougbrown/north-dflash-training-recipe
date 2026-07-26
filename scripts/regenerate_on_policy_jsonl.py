@@ -20,7 +20,9 @@ from typing import Any
 import aiohttp
 
 
-def load_prompts(path: Path, prompt_field: str) -> list[dict[str, Any]]:
+def load_prompts(
+    path: Path, prompt_field: str, source_index_offset: int = 0
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open(encoding="utf-8") as handle:
         for index, line in enumerate(handle):
@@ -30,7 +32,13 @@ def load_prompts(path: Path, prompt_field: str) -> list[dict[str, Any]]:
             prompt = row.get(prompt_field)
             if not isinstance(prompt, str) or not prompt.strip():
                 raise ValueError(f"row {index} has no nonempty {prompt_field!r}")
-            rows.append({"source_index": index, "prompt": prompt, "source": row})
+            rows.append(
+                {
+                    "source_index": source_index_offset + index,
+                    "prompt": prompt,
+                    "source": row,
+                }
+            )
     if not rows:
         raise ValueError("input contains no prompts")
     return rows
@@ -125,7 +133,7 @@ async def post_with_retries(
 
 
 async def regenerate(args: argparse.Namespace) -> None:
-    rows = load_prompts(args.input, args.prompt_field)
+    rows = load_prompts(args.input, args.prompt_field, args.source_index_offset)
     args.records.mkdir(parents=True, exist_ok=True)
     args.errors.mkdir(parents=True, exist_ok=True)
     queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
@@ -213,6 +221,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--prompt-field", default="instruction")
+    parser.add_argument("--source-index-offset", type=int, default=0)
     parser.add_argument("--records", type=Path, required=True)
     parser.add_argument("--errors", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -226,8 +235,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=600)
     parser.add_argument("--max-retries", type=int, default=1)
     args = parser.parse_args()
-    if args.concurrency < 1 or args.max_tokens < 1 or args.max_retries < 0:
-        parser.error("concurrency/max-tokens must be positive and max-retries nonnegative")
+    if (
+        args.concurrency < 1
+        or args.max_tokens < 1
+        or args.max_retries < 0
+        or args.source_index_offset < 0
+    ):
+        parser.error(
+            "concurrency/max-tokens must be positive; retries/offset nonnegative"
+        )
     return args
 
 

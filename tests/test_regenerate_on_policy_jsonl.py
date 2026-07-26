@@ -56,6 +56,13 @@ class RegenerateOnPolicyJsonlTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "nonempty"):
                 MODULE.load_prompts(path, "instruction")
 
+    def test_load_prompts_applies_nonnegative_source_offset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "source.jsonl"
+            path.write_text(json.dumps({"instruction": "prompt"}) + "\n")
+            rows = MODULE.load_prompts(path, "instruction", source_index_offset=600)
+            self.assertEqual(rows[0]["source_index"], 600)
+
     def test_stable_id_includes_source_index(self):
         self.assertNotEqual(MODULE.stable_id(1, "same"), MODULE.stable_id(2, "same"))
 
