@@ -1,0 +1,92 @@
+{
+  "experiment": "north-fp8-speculators-code-scaling-v1",
+  "status": "heldout_acceptance_scaling_pass",
+  "upstream_speculators_commit": "f7ec34182826bc89934ce710283421778022b74d",
+  "runtime_image_id": "sha256:35e531ee8b9d594555af39abe4a498294592e6501c64e2d935ee99fcbd942977",
+  "target_checkpoint_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+  "dataset": {
+    "id": "ise-uiuc/Magicoder-Evol-Instruct-110K",
+    "revision": "main",
+    "selection": "Rows 0-499 and 600 onward are training candidates; rows 500-599 are an untouched holdout.",
+    "response_policy": {
+      "max_tokens": 512,
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "seed": 0,
+      "target": "exact North FP8 verifier"
+    }
+  },
+  "training": {
+    "epochs": 5,
+    "noise_std": 0.05,
+    "learning_rate": 0.0003,
+    "loss": "kl_div",
+    "gamma": 4.0,
+    "block_size": 8,
+    "draft_layers": 5,
+    "draft_vocab_size": 32000,
+    "target_boundaries": [2, 24, 46, 49]
+  },
+  "holdout": {
+    "source_rows": "Magicoder valid rows 500-599",
+    "source_sha256": "b24db217f11d49c136e858ce11cfd85ab413c66f5f31825e1bdbe25780cd7318",
+    "prompts": 100,
+    "output_tokens_per_prompt": 128,
+    "temperature": 0.0,
+    "ignore_eos": true,
+    "candidate_output_token_ids_exact": true,
+    "output_token_id_root_sha256": "5d291d95b929eef361f59617e2f1ecd59f4a795dc90936389cf1142e825e1056"
+  },
+  "results": [
+    {
+      "training_rows": 500,
+      "training_tokens": 379567,
+      "run": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T030000Z-fp8-speculators-official-code500",
+      "on_policy_sha256": "1bcc735f1d50c9cb67272f54e63e9f8527db4f8eed73d21377cc2844d07e36ea",
+      "checkpoint_root_sha256": "f76d0358d6a4d9777c57db279deb98f0fe75e584df41b817be4c914e388792ae",
+      "model_safetensors_sha256": "c211f2d2eed2881901ea173dbd9bbe532dc01ce00208344f76a156f74b1939e0",
+      "validation_loss": 2.75884952545166,
+      "validation_eal": 0.2950770616531372,
+      "accepted_tokens": 3164,
+      "draft_tokens": 66962,
+      "draft_acceptance_rate": 0.04725067948985992,
+      "mean_emitted_tokens": 1.3307547564290194,
+      "accepted_by_position": [2725, 359, 61, 19, 0, 0, 0],
+      "warm_output_tokens_per_second": 30.83226638049308
+    },
+    {
+      "training_rows": 1000,
+      "training_tokens": 767216,
+      "run": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T050000Z-fp8-speculators-official-code1000",
+      "on_policy_sha256": "06f27137d1e3eb9b00cdc2dd34a6ffcab49c0edf02b44589642632980df97485",
+      "checkpoint_root_sha256": "3048479fc090df17a22a21d22816a1dc1438c2681e32fc1d1c2a7f0d747dd891",
+      "model_safetensors_sha256": "8b706710d5c3e59bfbe03a763214b5929df7bbec4414eaad17d9b266606d4de6",
+      "validation_loss": 2.3979637145996096,
+      "validation_eal": 0.48897356986999513,
+      "accepted_tokens": 4367,
+      "draft_tokens": 58618,
+      "draft_acceptance_rate": 0.07449930055614316,
+      "mean_emitted_tokens": 1.521495103893002,
+      "accepted_by_position": [3328, 823, 157, 47, 9, 2, 1],
+      "warm_output_tokens_per_second": 34.49710033719911
+    },
+    {
+      "training_rows": 2000,
+      "training_tokens": 1539673,
+      "run": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T070000Z-fp8-speculators-official-code2000",
+      "on_policy_sha256": "5d4264a517140baae275ac24547ed78140a2d12a5eb24eb43e5312a99a249fc5",
+      "checkpoint_root_sha256": "702a1c75305e37a0df5c3f6e86e890dffcc9f2ded88e0f3fde3b4bb40f5718b0",
+      "model_safetensors_sha256": "f5cf548534cddb5a3d95cc592f0e219db8fc92a984bcaa305d32e65bdb8394fe",
+      "validation_loss": 2.048110008239746,
+      "validation_eal": 0.6765995979309082,
+      "accepted_tokens": 5387,
+      "draft_tokens": 51611,
+      "draft_acceptance_rate": 0.10437697390091259,
+      "mean_emitted_tokens": 1.7306388173063882,
+      "accepted_by_position": [3640, 1244, 332, 121, 32, 11, 7],
+      "warm_output_tokens_per_second": 38.59444889976461
+    }
+  ],
+  "interpretation": "Held-out acceptance improved monotonically as exact on-policy coding data increased from 500 to 2000 rows. The 2000-row pilot exceeds the upstream tutorial's reported 1.47 acceptance length, but cross-hardware throughput is not comparable and response quality was not evaluated.",
+  "retention_warning": "Standard Speculators checkpoints include verifier vocabulary tensors and trusted-local optimizer pickle. They are diagnostic/deployment exports until converted through a reviewed draft-only retained-checkpoint adapter."
+}

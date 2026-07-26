@@ -128,6 +128,22 @@ A published, noise-free, dense-anchor epoch-99 checkpoint reached offline valida
 
 This is an end-to-end construction and parity pass. It is not held-out quality evidence and the noise-free checkpoint must not become a candidate.
 
+## On-policy coding-data scaling
+
+Fresh pilots then used exact FP8 target responses for Magicoder coding prompts, standard `noise_std=0.05`, and five epochs. Source rows 500–599 remained untouched for a fixed 100-prompt acceptance gate. Every gate generated 128 tokens per prompt with greedy sampling and `ignore_eos=true`.
+
+| Training rows | Training tokens | Validation EAL | Draft acceptance | Mean emitted length | Accepted by position | Warm output tok/s |
+| ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| 500 | 379,567 | 0.295 | 4.73% | 1.331 | `[2725,359,61,19,0,0,0]` | 30.83 |
+| 1,000 | 767,216 | 0.489 | 7.45% | 1.521 | `[3328,823,157,47,9,2,1]` | 34.50 |
+| 2,000 | 1,539,673 | 0.677 | 10.44% | 1.731 | `[3640,1244,332,121,32,11,7]` | 38.59 |
+
+The exact same holdout improved monotonically. The 2,000-row pilot accepted 5,387 tokens and produced nonzero acceptance at every draft position. All three candidates emitted byte-identical token-ID sequences across all 12,800 holdout output tokens (root `5d291d95…e1056`). Its mean emitted length exceeds the upstream tutorial's reported 1.47 for a 5K Qwen pilot, although throughput across different hardware and targets is not comparable.
+
+Responses were bounded at 512 generated tokens; 1,776 of the 2,000 rows ended at that limit. These are valid exact on-policy prefixes, but a later quality-oriented corpus should include longer completed responses. The acceptance gates do not evaluate response quality.
+
+Detailed identities and immutable run paths are in [`north-fp8-speculators-code-scaling-v1.json`](../configs/north-fp8-speculators-code-scaling-v1.json).
+
 ## Full-prefill versus incremental features
 
 For identical token IDs on one server, full-prefill and incremental extraction produced these differences:
