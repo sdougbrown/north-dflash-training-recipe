@@ -137,10 +137,11 @@ Fresh pilots then used exact FP8 target responses for Magicoder coding prompts, 
 | 500 | 379,567 | 0.295 | 4.73% | 1.331 | `[2725,359,61,19,0,0,0]` | 30.83 |
 | 1,000 | 767,216 | 0.489 | 7.45% | 1.521 | `[3328,823,157,47,9,2,1]` | 34.50 |
 | 2,000 | 1,539,673 | 0.677 | 10.44% | 1.731 | `[3640,1244,332,121,32,11,7]` | 38.59 |
+| 5,000 | 3,822,908 | 0.904 | 14.90% | 2.043 | `[3714,1648,666,278,131,60,24]` | 44.57 |
 
-The exact same holdout improved monotonically. The 2,000-row pilot accepted 5,387 tokens and produced nonzero acceptance at every draft position. All three candidates emitted byte-identical token-ID sequences across all 12,800 holdout output tokens (root `5d291d95…e1056`). Its mean emitted length exceeds the upstream tutorial's reported 1.47 for a 5K Qwen pilot, although throughput across different hardware and targets is not comparable.
+The exact same holdout improved monotonically. The 5,000-row pilot accepted 6,521 tokens and produced nonzero acceptance at every draft position. All four candidates emitted byte-identical token-ID sequences across all 12,800 holdout output tokens (root `5d291d95…e1056`). Its mean emitted length exceeds the upstream tutorial's reported 1.47 for a 5K Qwen pilot, although throughput across different hardware and targets is not comparable.
 
-Responses were bounded at 512 generated tokens; 1,776 of the 2,000 rows ended at that limit. These are valid exact on-policy prefixes, but a later quality-oriented corpus should include longer completed responses. The acceptance gates do not evaluate response quality.
+Responses were bounded at 512 generated tokens; 4,451 of the 5,000 rows ended at that limit. These are valid exact on-policy prefixes, but a later quality-oriented corpus should include longer completed responses. The acceptance gates do not evaluate response quality.
 
 Detailed identities and immutable run paths are in [`north-fp8-speculators-code-scaling-v1.json`](../configs/north-fp8-speculators-code-scaling-v1.json).
 
