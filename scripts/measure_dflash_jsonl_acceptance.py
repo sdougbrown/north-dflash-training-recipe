@@ -7,15 +7,60 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import time
+from urllib.request import Request, urlopen
 
-from measure_dflash_acceptance import (
-    METRICS,
-    get_text,
-    metric_value,
-    position_values,
-    post_json,
+
+METRICS = (
+    "vllm:spec_decode_num_drafts_total",
+    "vllm:spec_decode_num_draft_tokens_total",
+    "vllm:spec_decode_num_accepted_tokens_total",
 )
+
+
+def get_text(url: str) -> str:
+    with urlopen(url, timeout=30) as response:
+        return response.read().decode()
+
+
+def post_json(url: str, payload: dict) -> dict:
+    request = Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json", "Authorization": "Bearer none"},
+        method="POST",
+    )
+    with urlopen(request, timeout=900) as response:
+        return json.load(response)
+
+
+def metric_value(text: str, name: str) -> float:
+    pattern = re.compile(
+        rf"^{re.escape(name)}\{{[^\n]*\}}\s+([0-9.eE+-]+)$", re.MULTILINE
+    )
+    match = pattern.search(text)
+    if match is None:
+        raise RuntimeError(f"required metric is missing: {name}")
+    return float(match.group(1))
+
+
+def position_values(text: str) -> dict[int, float]:
+    pattern = re.compile(
+        r'^vllm:spec_decode_num_accepted_tokens_per_pos_total\{[^\n]*position="([0-9]+)"[^\n]*\}\s+([0-9.eE+-]+)$',
+        re.MULTILINE,
+    )
+    values = {
+        int(match.group(1)): float(match.group(2)) for match in pattern.finditer(text)
+    }
+    if not values:
+        raise RuntimeError("no per-position acceptance metrics were exported")
+    expected = set(range(max(values) + 1))
+    if set(values) != expected:
+        raise RuntimeError(
+            f"per-position acceptance metrics are not contiguous: {sorted(values)}"
+        )
+    return values
 
 
 def sha256_file(path: Path) -> str:
