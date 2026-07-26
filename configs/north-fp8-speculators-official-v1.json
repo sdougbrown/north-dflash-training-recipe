@@ -1,0 +1,129 @@
+{
+  "bounded_host_policy": {
+    "max_steps_warning": "At the pinned commit, --max-steps 100 did not stop the outer epoch loop; use --epochs as the hard bound.",
+    "sequence": [
+      "prepare on-policy pretokenized chunk",
+      "extract transient hidden states",
+      "stop teacher and cool down",
+      "train with upstream scripts/train.py",
+      "publish and verify checkpoint",
+      "hash and release transient hidden states"
+    ],
+    "teacher_and_training_concurrent": false
+  },
+  "claims_excluded": [
+    "held-out quality improvement",
+    "production acceptance",
+    "draft geometry selection",
+    "deployment readiness"
+  ],
+  "diagnostics": {
+    "dense_100_published": {
+      "checkpoint_epoch": 99,
+      "max_anchors": 512,
+      "noise_std": 0.0,
+      "offline_validation_eal": 6.966619968414307,
+      "offline_validation_full_accuracy": 0.9980314960629921,
+      "offline_validation_loss": 0.005257629789412022,
+      "runtime_acceptance_rate": 0.078397212543554,
+      "runtime_accepted_tokens": 45,
+      "runtime_accepted_tokens_per_position": [
+        8,
+        7,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "runtime_draft_tokens": 574,
+      "runtime_mean_emitted_tokens_per_speculative_step": 1.548780487804878
+    },
+    "dense_18_published": {
+      "checkpoint_epoch": 18,
+      "max_anchors": 512,
+      "noise_std": 0.0,
+      "offline_validation_eal": 0.12558510899543762,
+      "offline_validation_full_accuracy": 0.11136107986501688,
+      "offline_validation_loss": 2.1488232612609863,
+      "runtime_acceptance_rate": 0.009603841536614645,
+      "runtime_accepted_tokens": 8,
+      "runtime_draft_tokens": 833,
+      "runtime_mean_emitted_tokens_per_speculative_step": 1.0672268907563025
+    },
+    "full_prefill_vs_incremental_same_tokens": {
+      "entry_2": {
+        "exact": true,
+        "max_abs": 0.0,
+        "rmse": 0.0
+      },
+      "entry_24": {
+        "exact": false,
+        "max_abs": 5.625,
+        "rmse": 0.06761427223682404
+      },
+      "entry_46": {
+        "exact": false,
+        "max_abs": 48.0,
+        "rmse": 0.2733999192714691
+      },
+      "entry_49": {
+        "exact": false,
+        "max_abs": 15.0,
+        "rmse": 0.3219153881072998
+      },
+      "token_ids_equal": true
+    }
+  },
+  "documented_training_contract": {
+    "aux_hidden_state_boundary_ids": [
+      2,
+      24,
+      46
+    ],
+    "block_size": 8,
+    "connector_hidden_state_dtype": "bfloat16",
+    "connector_hidden_state_shape": [
+      752,
+      4,
+      2048
+    ],
+    "dflash_decay_gamma": 4.0,
+    "draft_architecture": "qwen3",
+    "draft_attention": "five sliding-attention layers",
+    "draft_intermediate_size": 768,
+    "draft_layers": 5,
+    "draft_vocab_size": 32000,
+    "learning_rate": 0.0003,
+    "loss": "kl_div",
+    "mask_token_id": 1,
+    "max_anchors_tutorial": 3072,
+    "noise_std": 0.05,
+    "on_policy_pretokenized_data": true,
+    "optimizer": "adamw",
+    "sample_from_anchor": false,
+    "sliding_window": 2048,
+    "verifier_final_boundary_id": 49
+  },
+  "evidence": "/home/douglasbrown/Serve/hosts/bitey/training/north-dflash/runs/20260726T180000Z-fp8-speculators-official-single/",
+  "experiment": "north-fp8-speculators-official-v1",
+  "interpretation": "The documented upstream training and standardized checkpoint path work end to end: vLLM loaded the checkpoint directly and a published 100-update seen-sample diagnostic achieved mean emitted length 1.549 with 45 accepted tokens. This is a construction/parity pass, not held-out quality. Full-prefill and incremental target features differ numerically, so standard noise augmentation and diverse on-policy data remain required before a retained acceptance pilot.",
+  "runtime": {
+    "backend": "TRITON_FP8_MOE",
+    "chunked_prefill_enabled": false,
+    "image": "local/vllm-openai-cuda:v0.25.1-north-dflash-speculators-f7ec3418-r4",
+    "image_id": "sha256:35e531ee8b9d594555af39abe4a498294592e6501c64e2d935ee99fcbd942977",
+    "prefix_caching_enabled": false,
+    "target_checkpoint": "/home/douglasbrown/Models/North-Mini-Code-1.0-fp8",
+    "target_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6",
+    "tensor_parallel_size": 1
+  },
+  "scope": "Documented upstream Speculators DFlash training contract and single-example parity diagnostics; not a retained quality pilot.",
+  "status": "diagnostic_acceptance_pass",
+  "upstream": {
+    "commit": "f7ec34182826bc89934ce710283421778022b74d",
+    "installed_distribution_metadata": "speculators==0.6.0",
+    "repository": "https://github.com/vllm-project/speculators",
+    "source_precedence": "/opt/speculators-f7ec3418/src"
+  }
+}
