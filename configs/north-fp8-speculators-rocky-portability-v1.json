@@ -1,0 +1,82 @@
+{
+  "claims_excluded": [
+    "response quality beyond the one NIAH retrieval",
+    "bitwise target-only/DFlash output parity",
+    "long-context speedup",
+    "production deployment readiness",
+    "compliant retained draft-only checkpoint"
+  ],
+  "draft": {
+    "model_safetensors_sha256": "51b59eec29aad7ab352e4a7541ccab8a54158d7fbdc28e232fee53f3678fdd30",
+    "training_host": "Bitey",
+    "training_rows": 5000
+  },
+  "draft_checkpoint_root_sha256": "8e6e9ae39e581e5ec6a5a77bf924fafab317fb86a56eca2763b86e87434c35b2",
+  "evidence": "/home/douglasbrown/Serve/hosts/rocky/training/north-dflash/runs/20260726T164000Z-fp8-speculators-5k-portability",
+  "experiment": "north-fp8-speculators-rocky-portability-v1",
+  "heldout100": {
+    "accepted_by_position": [
+      3754.0,
+      1655.0,
+      635.0,
+      261.0,
+      114.0,
+      58.0,
+      23.0
+    ],
+    "accepted_tokens": 6500.0,
+    "dflash_output_root": "4f3c0c807099116d2d95b987a1af00fddeb746c063113fc283cb9ddda5882eeb",
+    "dflash_output_tokens_per_s": 44.016414809444235,
+    "draft_acceptance_rate": 0.1479087971601511,
+    "draft_tokens": 43946.0,
+    "exact_full_requests": 10,
+    "mean_emitted_tokens": 2.035361580121058,
+    "median_equal_prefix_tokens": 48.5,
+    "minimum_equal_prefix_tokens": 2,
+    "speedup": 1.5407919650593644,
+    "target_output_root": "3853f981edc76ffe074404db74abb00ecfb240f11e7852df642d34631724c3c8",
+    "target_output_tokens_per_s": 28.56739638290387
+  },
+  "interpretation": "The CUDA-trained standardized draft ports to Rocky TP=2 with nearly identical acceptance and a 1.54x mixed-prompt sequential speedup. Fixed-prompt c1-c4 speedups are 1.17x-1.20x. At 20.7K prompt tokens acceptance drops and DFlash is 2.9% slower. Greedy target-only and DFlash token sequences diverge numerically on Rocky, so bitwise output parity remains unresolved.",
+  "load_c1_c2_c4": [
+    {
+      "concurrency": 1,
+      "dflash_output_tokens_per_s": 34.08,
+      "speedup": 1.168724279835391,
+      "target_output_tokens_per_s": 29.16
+    },
+    {
+      "concurrency": 2,
+      "dflash_output_tokens_per_s": 66.25,
+      "speedup": 1.2003986229389383,
+      "target_output_tokens_per_s": 55.19
+    },
+    {
+      "concurrency": 4,
+      "dflash_output_tokens_per_s": 134.32,
+      "speedup": 1.1834361233480175,
+      "target_output_tokens_per_s": 113.5
+    }
+  ],
+  "niah_20659_prompt_tokens": {
+    "dflash_answer_match": true,
+    "dflash_output_tokens_per_s": 16.35774554727903,
+    "draft_acceptance_rate": 0.06568144499178982,
+    "expected_answer_substring": "mauve-velociraptor-7741",
+    "mean_emitted_tokens": 1.4597701149425286,
+    "speedup": 0.9709915879763235,
+    "target_answer_match": true,
+    "target_output_tokens_per_s": 16.846433841276383
+  },
+  "runtime": {
+    "attention_backend": "TRITON_ATTN",
+    "host": "Rocky",
+    "image_id": "sha256:f8c0bfda3c035455d1277699b10226f35b5aedd4b13f2985b544d754f50605fa",
+    "nccl_proto": "Simple",
+    "target": "North-Mini-Code-1.0-fp8",
+    "target_backend": "TRITON FP8 MoE",
+    "tensor_parallel_size": 2
+  },
+  "status": "portability_and_speed_pass_with_output_parity_caveat",
+  "target_manifest_sha256": "35812fdf32f497a558f31bbea43e7d69f8c1cd43c66530c7499de2f293ae2bb6"
+}

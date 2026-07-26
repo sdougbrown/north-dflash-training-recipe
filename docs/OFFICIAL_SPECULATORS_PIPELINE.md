@@ -145,6 +145,26 @@ Responses were bounded at 512 generated tokens; 4,451 of the 5,000 rows ended at
 
 Detailed identities and immutable run paths are in [`north-fp8-speculators-code-scaling-v1.json`](../configs/north-fp8-speculators-code-scaling-v1.json).
 
+## Rocky FP8 portability
+
+The exact 5K checkpoint also loaded with Rocky's exact FP8 target under TP=2, TRITON FP8 MoE, `TRITON_ATTN`, and `NCCL_PROTO=Simple`. Its mean emitted length was `2.035`, closely matching Bitey's `2.043`.
+
+On the fixed 100-prompt holdout, warmed sequential target-only throughput was `28.57` output tok/s and DFlash throughput was `44.02` tok/s: an actual `1.541×` speculative speedup. A repeated fixed-prompt load gate measured:
+
+| Concurrency | Target-only tok/s | DFlash tok/s | Speedup |
+| ---: | ---: | ---: | ---: |
+| 1 | 29.16 | 34.08 | 1.169× |
+| 2 | 55.19 | 66.25 | 1.200× |
+| 4 | 113.50 | 134.32 | 1.183× |
+
+At 20,659 prompt tokens, both target-only and DFlash retrieved the correct NIAH answer. Acceptance fell to mean emitted length `1.460`, however, and DFlash was 2.9% slower (`16.36` versus `16.85` tok/s). Long-context adaptation or a different draft geometry is therefore required before enabling DFlash indiscriminately at long context.
+
+Greedy target-only and DFlash outputs were not bitwise identical on Rocky: only 10/100 complete responses matched, with a median common prefix of 48.5 tokens. Target execution under speculative verification uses different shapes and can change finite-precision decisions, but the difference remains an explicit numerical parity caveat rather than an assumed harmless effect.
+
+The legacy `NORTH_DFLASH_TIED_OUTPUT_CONTRACT` assertion must not be enabled for standardized 32K Speculators checkpoints. Those checkpoints intentionally carry a distinct pruned draft LM head; the assertion applies only to the historical full-vocabulary tied-output draft.
+
+Detailed evidence is in [`north-fp8-speculators-rocky-portability-v1.json`](../configs/north-fp8-speculators-rocky-portability-v1.json).
+
 ## Full-prefill versus incremental features
 
 For identical token IDs on one server, full-prefill and incremental extraction produced these differences:
